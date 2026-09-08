@@ -110,8 +110,8 @@ export default function App() {
         />
 
         {/* Content Area */}
-        <main className="flex-1 min-w-0 overflow-y-auto p-3 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 min-w-0 w-full max-w-full overflow-x-hidden overflow-y-auto p-3 sm:p-6 lg:p-8">
+          <div className="w-full max-w-7xl mx-auto min-w-0">
             {currentView === 'dashboard' && (
               <DashboardView
                 data={data}
