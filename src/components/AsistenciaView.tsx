@@ -623,8 +623,8 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
             </p>
           </div>
 
-          <div className="overflow-x-auto max-h-[70vh]">
-            <table className="w-full text-left border-collapse">
+          <div className="overflow-auto max-h-[70vh]">
+            <table className="min-w-max text-left border-collapse">
               <thead>
                 <tr className={`border-b text-xs uppercase tracking-wider sticky top-0 z-10 ${
                   darkMode ? 'bg-slate-900 border-slate-700 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-600'
