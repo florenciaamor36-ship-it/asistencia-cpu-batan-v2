@@ -212,7 +212,9 @@ export const MateriasView: React.FC<MateriasViewProps> = ({
 
             <button
               onClick={() => setManagingSubject(m)}
-              className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 transition text-xs font-bold flex items-center justify-center space-x-2"
+              className={`w-full py-2.5 rounded-xl transition text-xs font-bold flex items-center justify-center space-x-2 ${
+                darkMode ? 'bg-slate-700 text-slate-100 hover:bg-blue-600 hover:text-white' : 'bg-slate-100 text-slate-800 hover:bg-blue-600 hover:text-white'
+              }`}
             >
               <Users className="w-4 h-4" />
               <span>Gestionar Alumnos Inscriptos</span>
