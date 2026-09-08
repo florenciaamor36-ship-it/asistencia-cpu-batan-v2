@@ -6,7 +6,7 @@ import {
   BookOpen, 
   Briefcase, 
   BarChart3, 
-  Database, 
+  Database, Info, 
   ChevronDown, 
   ChevronRight,
   CheckSquare
@@ -136,6 +136,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <Database className="w-5 h-5" />
             <span>Respaldo / Migración</span>
+          </button>
+
+          <button
+            onClick={() => onSelectView('acerca')}
+            className={navItemClass(currentView === 'acerca')}
+          >
+            <Info className="w-5 h-5" />
+            <span>Acerca de y términos</span>
           </button>
         </div>
       </div>
