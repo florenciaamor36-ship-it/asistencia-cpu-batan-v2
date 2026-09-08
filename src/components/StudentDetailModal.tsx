@@ -15,6 +15,17 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
   onClose,
   darkMode
 }) => {
+  // Normalize every stored date (YYYY-MM-DD or DD/MM/YYYY) for display.
+  // Older backups use both formats, so never derive the label with split('-').
+  const formatDate = (raw: string) => {
+    const value = String(raw || '').trim();
+    const iso = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (iso) return `${iso[3].padStart(2, '0')}/${iso[2].padStart(2, '0')}/${iso[1]}`;
+    const local = value.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+    if (local) return `${local[1].padStart(2, '0')}/${local[2].padStart(2, '0')}/${local[3]}`;
+    return value;
+  };
+
   // Find all subjects this student is enrolled in
   const studentSubjects = data.materias.filter(m => m.alumnos.some(s => s.id === student.id));
 
@@ -129,8 +140,8 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                       if (isJ) badgeBg = 'bg-amber-500 text-white';
 
                       return (
-                        <span key={f} className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${badgeBg}`} title={`Fecha: ${f}`}>
-                          {f.split('-').slice(1).join('/')}
+                        <span key={f} className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${badgeBg}`} title={`Fecha: ${formatDate(f)}`}>
+                          {formatDate(f)}
                         </span>
                       );
                     })}
