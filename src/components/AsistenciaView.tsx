@@ -22,6 +22,15 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
+const formatDateDisplay = (value: string) => {
+  if (!value) return '';
+  const ddmmyyyy = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (ddmmyyyy) return `${ddmmyyyy[1].padStart(2, '0')}/${ddmmyyyy[2].padStart(2, '0')}/${ddmmyyyy[3]}`;
+  const iso = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+  return value;
+};
+
 interface AsistenciaViewProps {
   data: AppData;
   subjectId: string;
@@ -406,7 +415,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                     }`}
                     onClick={() => setSelectedDate(f)}
                   >
-                    <span>{f}</span>
+                    <span>{formatDateDisplay(f)}</span>
                     {role === 'admin' && subject.fechas.length > 1 && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDeleteDate(f); }}
@@ -434,7 +443,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
             <div className="flex items-center space-x-4">
               <div>
                 <p className="text-xs font-medium text-slate-400">Fecha Seleccionada</p>
-                <p className="text-lg font-bold">{selectedDate}</p>
+                <p className="text-lg font-bold">{formatDateDisplay(selectedDate)}</p>
               </div>
               <div className="h-8 w-px bg-slate-200 dark:bg-slate-700"></div>
               <div className="flex items-center space-x-3 text-xs">
@@ -633,7 +642,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                   <th className="min-w-[90px] py-3 px-3 font-semibold">Pabellón</th>
                   {subject.fechas.map(f => (
                     <th key={f} className="min-w-[84px] py-3 px-3 font-semibold text-center whitespace-nowrap">
-                      {f.split('-').slice(1).join('/')}
+                      {formatDateDisplay(f)}
                     </th>
                   ))}
                 </tr>
