@@ -20,7 +20,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
   const [role, setRole] = useState<'admin' | 'espectador'>(StorageService.getRole());
-  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [darkMode, setDarkMode] = useState<boolean>(true);
 
   // Modals state
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -43,9 +43,8 @@ export default function App() {
       return current;
     }));
 
-    // Check dark mode preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setDarkMode(prefersDark);
+    // La app inicia en modo oscuro por defecto.
+    setDarkMode(true);
     return stopRealtime;
   }, []);
 
