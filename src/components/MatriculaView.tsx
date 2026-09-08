@@ -586,11 +586,13 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold mb-2">Asignar a Materias y Talleres</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto p-2.5 rounded-xl border ${
+                  darkMode ? 'border-slate-700 bg-slate-800 text-slate-100' : 'border-slate-200 bg-slate-50 text-slate-800'
+                }`}>
                   {data.materias.map(m => {
                     const isChecked = formData.selectedMaterias.includes(m.id);
                     return (
-                      <label key={m.id} className="flex items-center space-x-2 text-xs cursor-pointer p-1 rounded hover:bg-slate-200/50 dark:hover:bg-slate-700/50">
+                      <label key={m.id} className={`flex items-center space-x-2 text-xs cursor-pointer p-1 rounded ${darkMode ? 'hover:bg-slate-700/50' : 'hover:bg-slate-200/50'}`}>
                         <input
                           type="checkbox"
                           checked={isChecked}
