@@ -14,6 +14,7 @@ import { LoginModal } from './components/LoginModal';
 import { StudentDetailModal } from './components/StudentDetailModal';
 import { DuplicateModal } from './components/DuplicateModal';
 import { Toast } from './components/Toast';
+import { AboutView } from './components/AboutView';
 
 export default function App() {
   const [data, setData] = useState<AppData | null>(null);
@@ -169,6 +170,8 @@ export default function App() {
                 darkMode={darkMode}
               />
             )}
+
+            {currentView === 'acerca' && <AboutView darkMode={darkMode} />}
 
             {currentView === 'respaldo' && (
               <BackupView
