@@ -364,31 +364,31 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
         <span className={`font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Ordenar por:</span>
         <button
           onClick={() => setSortBy('apellido_asc')}
-          className={`px-3 py-1 rounded-lg font-medium transition ${sortBy === 'apellido_asc' ? 'bg-blue-600 text-white' : darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+          className={`shrink-0 whitespace-nowrap px-3 py-1 rounded-lg font-medium transition ${sortBy === 'apellido_asc' ? 'bg-blue-600 text-white' : darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
         >
           Apellido A-Z
         </button>
         <button
           onClick={() => setSortBy('apellido_desc')}
-          className={`px-3 py-1 rounded-lg font-medium transition ${sortBy === 'apellido_desc' ? 'bg-blue-600 text-white' : darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+          className={`shrink-0 whitespace-nowrap px-3 py-1 rounded-lg font-medium transition ${sortBy === 'apellido_desc' ? 'bg-blue-600 text-white' : darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
         >
           Apellido Z-A
         </button>
         <button
           onClick={() => setSortBy('nombre_asc')}
-          className={`px-3 py-1 rounded-lg font-medium transition ${sortBy === 'nombre_asc' ? 'bg-blue-600 text-white' : darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+          className={`shrink-0 whitespace-nowrap px-3 py-1 rounded-lg font-medium transition ${sortBy === 'nombre_asc' ? 'bg-blue-600 text-white' : darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
         >
           Nombre A-Z
         </button>
         <button
           onClick={() => setSortBy('pabellon')}
-          className={`px-3 py-1 rounded-lg font-medium transition ${sortBy === 'pabellon' ? 'bg-blue-600 text-white' : darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+          className={`shrink-0 whitespace-nowrap px-3 py-1 rounded-lg font-medium transition ${sortBy === 'pabellon' ? 'bg-blue-600 text-white' : darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
         >
           Pabellón
         </button>
         <button
           onClick={() => setSortBy('dni')}
-          className={`px-3 py-1 rounded-lg font-medium transition ${sortBy === 'dni' ? 'bg-blue-600 text-white' : darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+          className={`shrink-0 whitespace-nowrap px-3 py-1 rounded-lg font-medium transition ${sortBy === 'dni' ? 'bg-blue-600 text-white' : darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
         >
           DNI
         </button>
