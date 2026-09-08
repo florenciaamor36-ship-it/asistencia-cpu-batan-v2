@@ -1,0 +1,7 @@
+{
+  "name": "CPU Batán - Control de Asistencia",
+  "description": "Sistema completo de control de asistencia, matrícula de alumnos y registro de trabajadores para CPU Batán.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
