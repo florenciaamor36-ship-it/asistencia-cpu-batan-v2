@@ -629,8 +629,8 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                 <tr className={`border-b text-xs uppercase tracking-wider sticky top-0 z-10 ${
                   darkMode ? 'bg-slate-900 border-slate-700 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-600'
                 }`}>
-                  <th className="py-3 px-4 font-semibold sticky left-0 z-20 bg-inherit shadow-xs">Alumno</th>
-                  <th className="py-3 px-3 font-semibold">Pabellón</th>
+                  <th className="min-w-[240px] py-3 px-4 font-semibold sticky left-0 z-20 bg-inherit shadow-xs">Alumno</th>
+                  <th className="min-w-[90px] py-3 px-3 font-semibold">Pabellón</th>
                   {subject.fechas.map(f => (
                     <th key={f} className="min-w-[84px] py-3 px-3 font-semibold text-center whitespace-nowrap">
                       {f.split('-').slice(1).join('/')}
@@ -648,10 +648,10 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                 ) : (
                   filteredStudents.map(alu => (
                     <tr key={alu.id} className={`transition-colors ${darkMode ? 'hover:bg-slate-750' : 'hover:bg-slate-50'}`}>
-                      <td className="py-2.5 px-4 font-bold sticky left-0 z-10 bg-inherit shadow-xs whitespace-nowrap">
+                      <td className="min-w-[240px] py-2.5 px-4 font-bold sticky left-0 z-10 bg-inherit shadow-xs whitespace-nowrap">
                         {alu.apellido}, {alu.nombre}
                       </td>
-                      <td className="py-2.5 px-3 text-xs text-slate-400 whitespace-nowrap">
+                      <td className="min-w-[90px] py-2.5 px-3 text-xs text-slate-400 whitespace-nowrap">
                         {alu.pabellon || '—'}
                       </td>
                       {subject.fechas.map(f => {
