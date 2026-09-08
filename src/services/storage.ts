@@ -1,149 +1,91 @@
-import { AppData, Student, Subject, Worker } from '../types';
+import { AppData, Student } from '../types';
 import { INITIAL_DATA } from '../data/defaultData';
 
 const LOCAL_STORAGE_KEY = 'cpu_batan_asistencia_data_v1';
 const ROLE_KEY = 'cpu_batan_user_role';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://ayoxwnqzrfojknhlocdg.supabase.co';
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const API = `${SUPABASE_URL}/rest/v1/app_data`;
 
-// Los trabajadores de CPU Batán figuran automáticamente como presentes en todas las materias.
 function aplicarAsistenciaAutomaticaTrabajadores(target: any): any {
   const normalizar = (valor: unknown) => String(valor ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const coincide = (alumno: any, trabajador: any) => {
-    const dniAlumno = normalizar(alumno.dni);
-    const dniTrabajador = normalizar(trabajador.dni);
-    return (dniAlumno && dniTrabajador && dniAlumno === dniTrabajador) ||
-      (normalizar(alumno.apellido) === normalizar(trabajador.apellido) && normalizar(alumno.nombre) === normalizar(trabajador.nombre));
+  const coincide = (a: any, w: any) => {
+    const da = normalizar(a.dni), dw = normalizar(w.dni);
+    return (da && dw && da === dw) || (normalizar(a.apellido) === normalizar(w.apellido) && normalizar(a.nombre) === normalizar(w.nombre));
   };
-  const trabajadores = Array.isArray(target?.trabajadores) ? target.trabajadores : [];
-  const materias = Array.isArray(target?.materias) ? target.materias : [];
-  for (const materia of materias) {
-    const fechas = Array.isArray(materia.fechas) ? materia.fechas : [];
+  const workers = Array.isArray(target?.trabajadores) ? target.trabajadores : [];
+  for (const materia of (target?.materias || [])) {
     if (!Array.isArray(materia.alumnos)) materia.alumnos = [];
-    for (const trabajador of trabajadores) {
-      let alumno = materia.alumnos.find((item: any) => coincide(item, trabajador));
+    for (const worker of workers) {
+      let alumno = materia.alumnos.find((x: any) => coincide(x, worker));
       if (!alumno) {
-        alumno = {
-          id: trabajador.id,
-          apellido: trabajador.apellido,
-          nombre: trabajador.nombre,
-          dni: trabajador.dni,
-          pabellon: trabajador.pabellon || '',
-          fecha_inscripcion: '',
-          fecha_vencimiento_carnet: trabajador.vencimiento_carnet || '',
-          asist: {},
-          observaciones: 'Trabajador CPU Batán - asistencia automática'
-        };
+        alumno = { id: worker.id, apellido: worker.apellido, nombre: worker.nombre, dni: worker.dni, pabellon: worker.pabellon || '', fecha_inscripcion: '', fecha_vencimiento_carnet: worker.vencimiento_carnet || '', asist: {}, observaciones: 'Trabajador CPU Batán - asistencia automática' };
         materia.alumnos.push(alumno);
       }
       alumno.asist = { ...(alumno.asist || {}) };
-      fechas.forEach((fecha: string) => { alumno.asist[fecha] = true; });
+      (materia.fechas || []).forEach((f: string) => alumno.asist[f] = true);
     }
   }
   return target;
 }
 
-export const StorageService = {
-  getRole(): 'admin' | 'espectador' {
-    const role = localStorage.getItem(ROLE_KEY);
-    return role === 'admin' ? 'admin' : 'espectador';
-  },
+function normalize(raw: any): AppData | null {
+  const target = raw?.payload?.record || raw?.record || raw;
+  if (!target?.materias) return null;
+  aplicarAsistenciaAutomaticaTrabajadores(target);
+  return { materias: target.materias || [], alumnos: target.alumnos || [], trabajadores: target.trabajadores || [], version: target.version || 1, last_updated: target.last_updated || new Date().toISOString() };
+}
 
-  setRole(role: 'admin' | 'espectador') {
-    localStorage.setItem(ROLE_KEY, role);
-  },
+const headers = () => ({ apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' });
+
+export const StorageService = {
+  getRole(): 'admin' | 'espectador' { return localStorage.getItem(ROLE_KEY) === 'admin' ? 'admin' : 'espectador'; },
+  setRole(role: 'admin' | 'espectador') { localStorage.setItem(ROLE_KEY, role); },
 
   async loadData(): Promise<AppData> {
-    const normalize = (raw: any): AppData | null => {
-      if (!raw) return null;
-      const target = raw.record && raw.record.materias ? raw.record : raw;
-      aplicarAsistenciaAutomaticaTrabajadores(target);
-      if (target && Array.isArray(target.materias)) {
-        return {
-          materias: target.materias || [],
-          alumnos: target.alumnos || [],
-          trabajadores: target.trabajadores || [],
-          version: target.version || 1,
-          last_updated: target.last_updated
-        };
-      }
-      return null;
-    };
-
     try {
-      // Try backend first
-      const res = await fetch('/api/data');
-      if (res.ok) {
-        const raw = await res.json();
-        const normalized = normalize(raw);
-        if (normalized) {
-          // Cache locally
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalized));
-          return normalized;
+      if (SUPABASE_KEY) {
+        const res = await fetch(`${API}?id=eq.1&select=payload,updated_at`, { headers: headers() });
+        if (res.ok) {
+          const rows = await res.json();
+          const normalized = normalize(rows?.[0]);
+          if (normalized) { localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalized)); return normalized; }
         }
       }
-    } catch (e) {
-      console.warn("Backend offline or unreachable, loading local storage cache:", e);
-    }
-
-    // Fallback to localStorage
+    } catch (e) { console.warn('Supabase no disponible; usando caché local.', e); }
     const local = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (local) {
-      try {
-        const raw = JSON.parse(local);
-        const normalized = normalize(raw);
-        if (normalized) return normalized;
-      } catch (err) {
-        console.error("Error parsing local data:", err);
-      }
-    }
-
-    // Initialize with default data if nothing exists
+    if (local) { try { const n = normalize(JSON.parse(local)); if (n) return n; } catch {} }
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(INITIAL_DATA));
     return INITIAL_DATA;
   },
 
   async saveData(data: AppData): Promise<boolean> {
     data.last_updated = new Date().toISOString();
-    // Save locally immediately
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-
-    // Try syncing to backend
+    if (!SUPABASE_KEY) return false;
     try {
-      const res = await fetch('/api/data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
+      const res = await fetch(`${API}?id=eq.1`, { method: 'PATCH', headers: { ...headers(), Prefer: 'return=minimal' }, body: JSON.stringify({ payload: { record: data }, updated_at: data.last_updated }) });
       return res.ok;
-    } catch (e) {
-      console.warn("Offline: Data saved locally, will sync when online.", e);
-      return false;
-    }
+    } catch (e) { console.warn('No se pudo guardar en Supabase.', e); return false; }
   },
 
-  // Duplicate detection helper
+  startRealtime(onData: (data: AppData) => void): () => void {
+    if (!SUPABASE_KEY) return () => {};
+    let last = '';
+    const poll = async () => {
+      try { const r = await fetch(`${API}?id=eq.1&select=payload,updated_at`, { headers: headers() }); const rows = await r.json(); const n = normalize(rows?.[0]); const stamp = rows?.[0]?.updated_at || n?.last_updated || ''; if (n && stamp !== last) { last = stamp; localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(n)); onData(n); } } catch {}
+    };
+    const timer = window.setInterval(poll, 3000); poll();
+    return () => window.clearInterval(timer);
+  },
+
   findDuplicates(alumnos: Student[]): Array<{ student: Student; duplicateOf: Student; reason: string }> {
     const results: Array<{ student: Student; duplicateOf: Student; reason: string }> = [];
-    
-    for (let i = 0; i < alumnos.length; i++) {
-      for (let j = i + 1; j < alumnos.length; j++) {
-        const a = alumnos[i];
-        const b = alumnos[j];
-
-        // Check DNI match (if both have DNI and not empty)
-        if (a.dni && b.dni && a.dni.trim() !== '' && a.dni.trim() === b.dni.trim()) {
-          results.push({ student: b, duplicateOf: a, reason: `DNI idéntico: ${a.dni}` });
-          continue;
-        }
-
-        // Check Full Name match (exact or very close)
-        const nameA = `${a.apellido} ${a.nombre}`.trim().toLowerCase();
-        const nameB = `${b.apellido} ${b.nombre}`.trim().toLowerCase();
-        if (nameA === nameB && nameA.length > 3) {
-          results.push({ student: b, duplicateOf: a, reason: `Nombre y apellido idénticos: ${a.apellido}, ${a.nombre}` });
-        }
-      }
+    for (let i = 0; i < alumnos.length; i++) for (let j = i + 1; j < alumnos.length; j++) {
+      const a = alumnos[i], b = alumnos[j];
+      if (a.dni && b.dni && a.dni.trim() && a.dni.trim() === b.dni.trim()) results.push({ student: b, duplicateOf: a, reason: `DNI idéntico: ${a.dni}` });
+      else if (`${a.apellido} ${a.nombre}`.trim().toLowerCase() === `${b.apellido} ${b.nombre}`.trim().toLowerCase()) results.push({ student: b, duplicateOf: a, reason: `Nombre y apellido idénticos: ${a.apellido}, ${a.nombre}` });
     }
-
     return results;
   }
 };
