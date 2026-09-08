@@ -13,7 +13,6 @@ import { BackupView } from './components/BackupView';
 import { LoginModal } from './components/LoginModal';
 import { StudentDetailModal } from './components/StudentDetailModal';
 import { DuplicateModal } from './components/DuplicateModal';
-import { AiAssistantModal } from './components/AiAssistantModal';
 import { Toast } from './components/Toast';
 
 export default function App() {
@@ -27,7 +26,6 @@ export default function App() {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [selectedStudentDetail, setSelectedStudentDetail] = useState<Student | null>(null);
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
-  const [aiModalOpen, setAiModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ msg: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   useEffect(() => {
@@ -93,7 +91,6 @@ export default function App() {
         role={role}
         onOpenLogin={() => setLoginModalOpen(true)}
         onLogout={handleLogout}
-        onOpenAi={() => setAiModalOpen(true)}
         lastSynced={data.last_updated || ''}
         darkMode={darkMode}
         onToggleDarkMode={() => setDarkMode(!darkMode)}
@@ -101,7 +98,7 @@ export default function App() {
       />
 
       {/* Main Body Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-w-0">
         {/* Sidebar */}
         <Sidebar
           currentView={currentView}
@@ -113,7 +110,7 @@ export default function App() {
         />
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 min-w-0 overflow-y-auto p-3 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {currentView === 'dashboard' && (
               <DashboardView
@@ -219,13 +216,6 @@ export default function App() {
         />
       )}
 
-      {aiModalOpen && (
-        <AiAssistantModal
-          data={data}
-          onClose={() => setAiModalOpen(false)}
-          darkMode={darkMode}
-        />
-      )}
 
       {/* Toast notifications */}
       {toastMessage && (
