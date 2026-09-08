@@ -5,7 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    base: '/asistencia-cpu-batan-v2/',
+    base: './',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
