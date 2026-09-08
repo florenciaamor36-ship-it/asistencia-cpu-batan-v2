@@ -527,7 +527,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
             darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
           }`}>
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-max min-w-[760px] text-left border-collapse">
                 <thead>
                   <tr className={`border-b text-xs uppercase tracking-wider ${
                     darkMode ? 'bg-slate-900/80 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'
@@ -563,13 +563,13 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                               {alu.pabellon || 'Sin asignar'}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center justify-center space-x-2">
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <div className="flex items-center justify-center space-x-2 whitespace-nowrap">
                               {/* Presente */}
                               <button
                                 disabled={role === 'espectador'}
                                 onClick={() => handleSetAttendance(alu.id, true)}
-                                className={`flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                                className={`flex shrink-0 items-center space-x-1 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
                                   isPresent 
                                     ? 'bg-emerald-600 text-white shadow-md' 
                                     : darkMode ? 'bg-slate-900 text-slate-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -583,7 +583,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                               <button
                                 disabled={role === 'espectador'}
                                 onClick={() => handleSetAttendance(alu.id, false)}
-                                className={`flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                                className={`flex shrink-0 items-center space-x-1 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
                                   isAbsent 
                                     ? 'bg-red-600 text-white shadow-md' 
                                     : darkMode ? 'bg-slate-900 text-slate-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -597,7 +597,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                               <button
                                 disabled={role === 'espectador'}
                                 onClick={() => handleSetAttendance(alu.id, 'justificado')}
-                                className={`flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                                className={`flex shrink-0 items-center space-x-1 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
                                   isJustified 
                                     ? 'bg-amber-500 text-white shadow-md' 
                                     : darkMode ? 'bg-slate-900 text-slate-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
