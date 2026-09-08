@@ -1,2 +1,12 @@
 @custom-variant dark (&:where(.dark, .dark *));
 @import "tailwindcss";
+
+
+/* Protección contra desbordamientos en pantallas pequeñas */
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { width: 100%; max-width: 100%; min-width: 0; overflow-x: hidden; }
+button, input, select, textarea { max-width: 100%; }
+@media (max-width: 640px) {
+  button { overflow-wrap: anywhere; }
+  input, select, textarea { min-width: 0; }
+}

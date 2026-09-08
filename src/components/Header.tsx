@@ -53,7 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Right: Status, Role, Actions */}
-      <div className="flex items-center gap-1 sm:gap-2 sm:space-x-2 sm:space-x-4">
+      <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1 sm:gap-2 sm:space-x-2 sm:space-x-4">
         {/* Connection status */}
         <div className="hidden md:flex items-center space-x-1.5 text-xs px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
           {isOnline ? (
@@ -90,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Role Badge & Auth */}
         {role === 'admin' ? (
-          <div className="flex items-center space-x-2">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center space-x-2">
             <span className="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Admin</span>
@@ -105,7 +105,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
         ) : (
-          <div className="flex items-center space-x-2">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center space-x-2">
             <span className="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium">
               <Shield className="w-3.5 h-3.5" />
               <span>Espectador</span>

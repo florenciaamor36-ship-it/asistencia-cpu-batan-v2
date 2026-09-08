@@ -32,7 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [materiasOpen, setMateriasOpen] = useState(true);
 
   const navItemClass = (active: boolean) => `
-    w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition
+    w-full min-w-0 flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition
     ${active 
       ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' 
       : darkMode 
@@ -56,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={navItemClass(currentView === 'dashboard')}
           >
             <LayoutDashboard className="w-5 h-5" />
-            <span>Panel General</span>
+            <span className="min-w-0 break-words">Panel General</span>
           </button>
 
           <button
@@ -64,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={navItemClass(currentView === 'matricula')}
           >
             <Users className="w-5 h-5" />
-            <span>Matrícula Completa</span>
+            <span className="min-w-0 break-words">Matrícula Completa</span>
           </button>
 
           {/* Materias with collapsible submenu */}
@@ -77,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className="flex items-center space-x-3 flex-1 text-left"
               >
                 <BookOpen className="w-5 h-5" />
-                <span>Gestión de Materias</span>
+                <span className="min-w-0 break-words">Gestión de Materias</span>
               </button>
               <button
                 onClick={() => setMateriasOpen(!materiasOpen)}
@@ -119,7 +119,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={navItemClass(currentView === 'trabajadores')}
           >
             <Briefcase className="w-5 h-5" />
-            <span>Trabajadores</span>
+            <span className="min-w-0 break-words">Trabajadores</span>
           </button>
 
           <button
@@ -127,7 +127,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={navItemClass(currentView === 'estadisticas')}
           >
             <BarChart3 className="w-5 h-5" />
-            <span>Estadísticas</span>
+            <span className="min-w-0 break-words">Estadísticas</span>
           </button>
 
           <button
@@ -135,7 +135,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={navItemClass(currentView === 'respaldo')}
           >
             <Database className="w-5 h-5" />
-            <span>Respaldo / Migración</span>
+            <span className="min-w-0 break-words">Respaldo / Migración</span>
           </button>
 
           <button
@@ -143,7 +143,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={navItemClass(currentView === 'acerca')}
           >
             <Info className="w-5 h-5" />
-            <span>Acerca de y términos</span>
+            <span className="min-w-0 break-words">Acerca de y términos</span>
           </button>
         </div>
       </div>
