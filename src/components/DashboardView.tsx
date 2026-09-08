@@ -156,15 +156,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Carnet Alerts Warning (if any) */}
       {(carnetsVencidos > 0 || carnetsProximos > 0) && (
-        <div className={`p-4 rounded-2xl border flex items-center justify-between ${
+        <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
           darkMode ? 'bg-amber-950/30 border-amber-800/60 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-800'
         }`}>
-          <div className="flex items-center space-x-3">
+          <div className="flex min-w-0 items-start space-x-3">
             <div className="p-2 rounded-xl bg-amber-500 text-white">
               <ShieldAlert className="w-5 h-5" />
             </div>
-            <div>
-              <p className="font-semibold text-sm">Alertas de Carnets Institucionales</p>
+            <div className="min-w-0">
+              <p className="font-semibold text-sm break-words">Alertas de Carnets Institucionales</p>
               <p className="text-xs opacity-90 mt-0.5">
                 {carnetsVencidosInactivos > 0
                   ? `${carnetsVencidosInactivos} carnets están vencidos y sus titulares figuran INACTIVOS porque no tienen renovación vigente. En cada ficha se detalla si fue por asistencia insuficiente o por no registrar asistencias.`
@@ -175,7 +175,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <button
             onClick={() => onSelectView('matricula')}
-            className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-xs transition"
+            className="shrink-0 whitespace-nowrap px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-xs transition"
           >
             Revisar Matrícula
           </button>
@@ -184,7 +184,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Quick Access Subjects */}
       <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-800/80 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <h3 className="text-lg font-bold">Materias y Talleres Activos</h3>
           <span className={`text-xs px-2.5 py-1 rounded-full ${darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
             Seleccioná una materia para registrar asistencia
@@ -212,7 +212,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <h4 className="font-bold text-sm group-hover:text-blue-500 transition line-clamp-1">{m.nombre}</h4>
                   <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
                 </div>
-                <div className={`mt-3 flex items-center justify-between text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                <div className={`mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                   <span>{numAlumnos} alumnos inscriptos</span>
                   <span>{numFechas} clases registradas</span>
                 </div>

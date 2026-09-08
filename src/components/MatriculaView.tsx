@@ -401,7 +401,7 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
             <thead>
               <tr className={`border-b text-xs uppercase tracking-wider sticky top-0 z-20 ${darkMode ? 'bg-slate-900 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
                 <th className="py-3.5 px-4 font-semibold">Alumno</th>
-                <th className="py-3.5 px-4 font-semibold">DNI</th>
+                <th className="py-3.5 px-4 font-semibold whitespace-nowrap">DNI</th>
                 <th className="py-3.5 px-4 font-semibold">Pabellón</th>
                 <th className="py-3.5 px-4 font-semibold">Inscripción</th>
                 <th className="py-3.5 px-4 font-semibold">Carnet</th>
@@ -429,7 +429,7 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
                           </div>
                         )}
                       </td>
-                      <td className="py-3 px-4 font-mono text-xs">{alu.dni || '—'}</td>
+                      <td className="py-3 px-4 font-mono text-xs whitespace-nowrap">{alu.dni || '—'}</td>
                       <td className="py-3 px-4">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                           darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-700'
