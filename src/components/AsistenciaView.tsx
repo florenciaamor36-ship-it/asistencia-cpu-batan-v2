@@ -623,8 +623,8 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
             </p>
           </div>
 
-          <div className="overflow-auto max-h-[70vh]">
-            <table className="min-w-max text-left border-collapse">
+          <div className="w-full max-w-full overflow-x-scroll overflow-y-auto max-h-[70vh]">
+            <table className="w-max min-w-full text-left border-collapse">
               <thead>
                 <tr className={`border-b text-xs uppercase tracking-wider sticky top-0 z-10 ${
                   darkMode ? 'bg-slate-900 border-slate-700 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-600'
@@ -632,7 +632,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                   <th className="py-3 px-4 font-semibold sticky left-0 z-20 bg-inherit shadow-xs">Alumno</th>
                   <th className="py-3 px-3 font-semibold">Pabellón</th>
                   {subject.fechas.map(f => (
-                    <th key={f} className="py-3 px-3 font-semibold text-center whitespace-nowrap">
+                    <th key={f} className="min-w-[84px] py-3 px-3 font-semibold text-center whitespace-nowrap">
                       {f.split('-').slice(1).join('/')}
                     </th>
                   ))}
@@ -661,7 +661,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                         const isJ = val === 'justificado';
 
                         return (
-                          <td key={f} className="py-2.5 px-3 text-center">
+                          <td key={f} className="min-w-[84px] py-2.5 px-3 text-center">
                             <button
                               disabled={role === 'espectador'}
                               onClick={() => handleToggleMatrixCell(alu.id, f)}
