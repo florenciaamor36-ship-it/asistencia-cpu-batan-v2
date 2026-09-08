@@ -41,4 +41,4 @@ export interface AppData {
   last_updated?: string;
 }
 
-export type ViewMode = 'dashboard' | 'matricula' | 'materias' | 'asistencia' | 'trabajadores' | 'estadisticas' | 'respaldo';
+export type ViewMode = 'dashboard' | 'matricula' | 'materias' | 'asistencia' | 'trabajadores' | 'estadisticas' | 'respaldo' | 'acerca';
