@@ -43,12 +43,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   // Carnet status counts
   const today = new Date().toISOString().split('T')[0];
   let carnetsVencidos = 0;
+  let carnetsVencidosInactivos = 0;
   let carnetsProximos = 0;
 
   data.alumnos.forEach(alu => {
     if (alu.fecha_vencimiento_carnet) {
       if (alu.fecha_vencimiento_carnet < today) {
         carnetsVencidos++;
+        if (alu.estado === 'inactivo') carnetsVencidosInactivos++;
       } else {
         const diffTime = new Date(alu.fecha_vencimiento_carnet).getTime() - new Date(today).getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -164,7 +166,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div>
               <p className="font-semibold text-sm">Alertas de Carnets Institucionales</p>
               <p className="text-xs opacity-90 mt-0.5">
-                Hay {carnetsVencidos} carnets vencidos y {carnetsProximos} próximos a vencer en los próximos 30 días.
+                {carnetsVencidosInactivos > 0
+                  ? `${carnetsVencidosInactivos} carnets están vencidos y sus titulares figuran INACTIVOS porque no tienen renovación vigente. En cada ficha se detalla si fue por asistencia insuficiente o por no registrar asistencias.`
+                  : `Hay ${carnetsVencidos} carnets vencidos`}
+                {carnetsProximos > 0 ? ` y ${carnetsProximos} próximos a vencer en los próximos 30 días.` : '.'}
               </p>
             </div>
           </div>
