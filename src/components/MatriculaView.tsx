@@ -396,10 +396,10 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
 
       {/* Students Table */}
       <div className={`rounded-2xl border overflow-hidden shadow-xs ${darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="w-full max-w-full max-h-[70vh] overflow-auto rounded-b-2xl">
+          <table className="w-max min-w-full text-left border-collapse">
             <thead>
-              <tr className={`border-b text-xs uppercase tracking-wider ${darkMode ? 'bg-slate-900/80 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+              <tr className={`border-b text-xs uppercase tracking-wider sticky top-0 z-20 ${darkMode ? 'bg-slate-900 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
                 <th className="py-3.5 px-4 font-semibold">Alumno</th>
                 <th className="py-3.5 px-4 font-semibold">DNI</th>
                 <th className="py-3.5 px-4 font-semibold">Pabellón</th>
