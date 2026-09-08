@@ -424,7 +424,10 @@
               "07/07/2026": true,
               "14/07/2026": true,
               "21/07/2026": true,
-              "11/08/2026": true
+              "11/08/2026": true,
+              "18/08/2026": true,
+              "28/08/2026": true,
+              "01/09/2026": true
             },
             "observaciones": ""
           },
@@ -577,7 +580,20 @@
               "2026-04-08": true,
               "05/05/2026": true,
               "29/04/2026": true,
-              "12/05/2026": true
+              "12/05/2026": true,
+              "2026-04-01": true,
+              "2026-04-15": true,
+              "26/05/2026": true,
+              "02/06/2026": true,
+              "16/06/2026": true,
+              "30/06/2026": true,
+              "07/07/2026": true,
+              "14/07/2026": true,
+              "21/07/2026": true,
+              "11/08/2026": true,
+              "18/08/2026": true,
+              "28/08/2026": true,
+              "01/09/2026": true
             },
             "observaciones": ""
           },
@@ -635,7 +651,9 @@
               "14/07/2026": true,
               "21/07/2026": true,
               "11/08/2026": true,
-              "28/08/2026": true
+              "28/08/2026": true,
+              "18/08/2026": true,
+              "01/09/2026": true
             },
             "observaciones": ""
           },
@@ -791,7 +809,8 @@
               "21/07/2026": true,
               "11/08/2026": true,
               "18/08/2026": true,
-              "28/08/2026": true
+              "28/08/2026": true,
+              "01/09/2026": true
             },
             "observaciones": ""
           },
@@ -933,7 +952,9 @@
               "07/07/2026": true,
               "30/06/2026": true,
               "11/08/2026": true,
-              "28/08/2026": true
+              "28/08/2026": true,
+              "18/08/2026": true,
+              "01/09/2026": true
             },
             "observaciones": ""
           },
@@ -1187,7 +1208,9 @@
               "14/07/2026": true,
               "21/07/2026": true,
               "11/08/2026": true,
-              "28/08/2026": true
+              "28/08/2026": true,
+              "18/08/2026": true,
+              "01/09/2026": true
             },
             "observaciones": ""
           },
@@ -1273,7 +1296,10 @@
               "07/07/2026": true,
               "14/07/2026": true,
               "21/07/2026": true,
-              "11/08/2026": true
+              "11/08/2026": true,
+              "18/08/2026": true,
+              "28/08/2026": true,
+              "01/09/2026": true
             },
             "observaciones": ""
           },
@@ -1332,7 +1358,26 @@
             "pabellon": "14",
             "fecha_inscripcion": "2026-09-07",
             "fecha_vencimiento_carnet": "2026-10-30",
-            "asist": {},
+            "asist": {
+              "2026-03-25": true,
+              "2026-04-01": true,
+              "2026-04-08": true,
+              "2026-04-15": true,
+              "29/04/2026": true,
+              "05/05/2026": true,
+              "12/05/2026": true,
+              "26/05/2026": true,
+              "02/06/2026": true,
+              "16/06/2026": true,
+              "30/06/2026": true,
+              "07/07/2026": true,
+              "14/07/2026": true,
+              "21/07/2026": true,
+              "11/08/2026": true,
+              "18/08/2026": true,
+              "28/08/2026": true,
+              "01/09/2026": true
+            },
             "observaciones": ""
           },
           {
@@ -1343,8 +1388,57 @@
             "pabellon": "16",
             "fecha_inscripcion": "2026-09-07",
             "fecha_vencimiento_carnet": "2026-03-10",
-            "asist": {},
+            "asist": {
+              "2026-03-25": true,
+              "2026-04-01": true,
+              "2026-04-08": true,
+              "2026-04-15": true,
+              "29/04/2026": true,
+              "05/05/2026": true,
+              "12/05/2026": true,
+              "26/05/2026": true,
+              "02/06/2026": true,
+              "16/06/2026": true,
+              "30/06/2026": true,
+              "07/07/2026": true,
+              "14/07/2026": true,
+              "21/07/2026": true,
+              "11/08/2026": true,
+              "18/08/2026": true,
+              "28/08/2026": true,
+              "01/09/2026": true
+            },
             "observaciones": ""
+          },
+          {
+            "id": "1781699576239-d1lzg",
+            "apellido": "PIANCIOLA FERNANDEZ",
+            "nombre": "LUCAS",
+            "dni": "42,955,136",
+            "pabellon": "13",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "",
+            "asist": {
+              "2026-03-25": true,
+              "2026-04-01": true,
+              "2026-04-08": true,
+              "2026-04-15": true,
+              "29/04/2026": true,
+              "05/05/2026": true,
+              "12/05/2026": true,
+              "26/05/2026": true,
+              "02/06/2026": true,
+              "16/06/2026": true,
+              "30/06/2026": true,
+              "07/07/2026": true,
+              "14/07/2026": true,
+              "21/07/2026": true,
+              "11/08/2026": true,
+              "18/08/2026": true,
+              "28/08/2026": true,
+              "01/09/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
           }
         ]
       },
@@ -1616,7 +1710,9 @@
               "13/05/2026": true,
               "22/05/2026": true,
               "29/05/2026": true,
-              "12/06/2026": true
+              "12/06/2026": true,
+              "19/06/2026": true,
+              "26/06/2026": true
             },
             "observaciones": ""
           },
@@ -1680,7 +1776,8 @@
               "22/05/2026": true,
               "29/05/2026": true,
               "12/06/2026": true,
-              "26/06/2026": true
+              "26/06/2026": true,
+              "19/06/2026": true
             },
             "observaciones": ""
           },
@@ -1947,7 +2044,9 @@
               "13/05/2026": true,
               "22/05/2026": true,
               "29/05/2026": true,
-              "26/06/2026": true
+              "26/06/2026": true,
+              "12/06/2026": true,
+              "19/06/2026": true
             },
             "observaciones": ""
           },
@@ -2150,7 +2249,14 @@
             "pabellon": "14",
             "fecha_inscripcion": "2026-09-07",
             "fecha_vencimiento_carnet": "2026-10-30",
-            "asist": {},
+            "asist": {
+              "13/05/2026": true,
+              "22/05/2026": true,
+              "29/05/2026": true,
+              "12/06/2026": true,
+              "19/06/2026": true,
+              "26/06/2026": true
+            },
             "observaciones": ""
           },
           {
@@ -2161,8 +2267,105 @@
             "pabellon": "16",
             "fecha_inscripcion": "2026-09-07",
             "fecha_vencimiento_carnet": "2026-03-10",
-            "asist": {},
+            "asist": {
+              "13/05/2026": true,
+              "22/05/2026": true,
+              "29/05/2026": true,
+              "12/06/2026": true,
+              "19/06/2026": true,
+              "26/06/2026": true
+            },
             "observaciones": ""
+          },
+          {
+            "id": "1776782465061-g9bdd",
+            "apellido": "VIDAL SANZANA",
+            "nombre": "LUIS MIGUEL",
+            "dni": "33367713",
+            "pabellon": "",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "2026-07-30",
+            "asist": {
+              "13/05/2026": true,
+              "22/05/2026": true,
+              "29/05/2026": true,
+              "12/06/2026": true,
+              "19/06/2026": true,
+              "26/06/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
+          },
+          {
+            "id": "1776782553435-6ug5t",
+            "apellido": "LAZARTE",
+            "nombre": "VICTOR ALEJANDRO",
+            "dni": "37012139",
+            "pabellon": "",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "2026-07-30",
+            "asist": {
+              "13/05/2026": true,
+              "22/05/2026": true,
+              "29/05/2026": true,
+              "12/06/2026": true,
+              "19/06/2026": true,
+              "26/06/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
+          },
+          {
+            "id": "1776782619962-8dlpa",
+            "apellido": "VELIZ",
+            "nombre": "JESUS",
+            "dni": "36.384.828",
+            "pabellon": "13",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "2026-07-30",
+            "asist": {
+              "13/05/2026": true,
+              "22/05/2026": true,
+              "29/05/2026": true,
+              "12/06/2026": true,
+              "19/06/2026": true,
+              "26/06/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
+          },
+          {
+            "id": "1776782685165-mv92w",
+            "apellido": "FIEGO MERGEN",
+            "nombre": "DANIEL EDGARDO",
+            "dni": "31721603",
+            "pabellon": "16",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "2026-07-30",
+            "asist": {
+              "13/05/2026": true,
+              "22/05/2026": true,
+              "29/05/2026": true,
+              "12/06/2026": true,
+              "19/06/2026": true,
+              "26/06/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
+          },
+          {
+            "id": "1781699576239-d1lzg",
+            "apellido": "PIANCIOLA FERNANDEZ",
+            "nombre": "LUCAS",
+            "dni": "42,955,136",
+            "pabellon": "13",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "",
+            "asist": {
+              "13/05/2026": true,
+              "22/05/2026": true,
+              "29/05/2026": true,
+              "12/06/2026": true,
+              "19/06/2026": true,
+              "26/06/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
           }
         ]
       },
@@ -2243,7 +2446,8 @@
             "fecha_inscripcion": "2026-05-05",
             "fecha_vencimiento_carnet": "2026-10-30",
             "asist": {
-              "05/06/2026": true
+              "05/06/2026": true,
+              "19/06/2026": true
             },
             "observaciones": ""
           },
@@ -2363,7 +2567,8 @@
             "fecha_inscripcion": "2026-04-21",
             "fecha_vencimiento_carnet": "30/10/2026",
             "asist": {
-              "05/06/2026": true
+              "05/06/2026": true,
+              "19/06/2026": true
             },
             "observaciones": ""
           },
@@ -2443,7 +2648,10 @@
             "pabellon": "14",
             "fecha_inscripcion": "2026-09-07",
             "fecha_vencimiento_carnet": "2026-10-30",
-            "asist": {},
+            "asist": {
+              "05/06/2026": true,
+              "19/06/2026": true
+            },
             "observaciones": ""
           },
           {
@@ -2454,8 +2662,81 @@
             "pabellon": "16",
             "fecha_inscripcion": "2026-09-07",
             "fecha_vencimiento_carnet": "2026-03-10",
-            "asist": {},
+            "asist": {
+              "05/06/2026": true,
+              "19/06/2026": true
+            },
             "observaciones": ""
+          },
+          {
+            "id": "1776782465061-g9bdd",
+            "apellido": "VIDAL SANZANA",
+            "nombre": "LUIS MIGUEL",
+            "dni": "33367713",
+            "pabellon": "",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "2026-07-30",
+            "asist": {
+              "05/06/2026": true,
+              "19/06/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
+          },
+          {
+            "id": "1776782553435-6ug5t",
+            "apellido": "LAZARTE",
+            "nombre": "VICTOR ALEJANDRO",
+            "dni": "37012139",
+            "pabellon": "",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "2026-07-30",
+            "asist": {
+              "05/06/2026": true,
+              "19/06/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
+          },
+          {
+            "id": "1776782619962-8dlpa",
+            "apellido": "VELIZ",
+            "nombre": "JESUS",
+            "dni": "36.384.828",
+            "pabellon": "13",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "2026-07-30",
+            "asist": {
+              "05/06/2026": true,
+              "19/06/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
+          },
+          {
+            "id": "1776782685165-mv92w",
+            "apellido": "FIEGO MERGEN",
+            "nombre": "DANIEL EDGARDO",
+            "dni": "31721603",
+            "pabellon": "16",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "2026-07-30",
+            "asist": {
+              "05/06/2026": true,
+              "19/06/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
+          },
+          {
+            "id": "1781699576239-d1lzg",
+            "apellido": "PIANCIOLA FERNANDEZ",
+            "nombre": "LUCAS",
+            "dni": "42,955,136",
+            "pabellon": "13",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "",
+            "asist": {
+              "05/06/2026": true,
+              "19/06/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
           }
         ]
       },
@@ -2617,7 +2898,8 @@
               "10/06/2026": true,
               "17/06/2026": true,
               "24/06/2026": true,
-              "26/08/2026": true
+              "26/08/2026": true,
+              "08/07/2026": true
             },
             "observaciones": ""
           },
@@ -2773,7 +3055,8 @@
               "17/06/2026": true,
               "03/06/2026": true,
               "24/06/2026": true,
-              "26/08/2026": true
+              "26/08/2026": true,
+              "08/07/2026": true
             },
             "observaciones": ""
           },
@@ -2948,7 +3231,17 @@
             "pabellon": "14",
             "fecha_inscripcion": "2026-09-07",
             "fecha_vencimiento_carnet": "2026-10-30",
-            "asist": {},
+            "asist": {
+              "06/05/2026": true,
+              "20/07/2026": true,
+              "27/05/2026": true,
+              "03/06/2026": true,
+              "10/06/2026": true,
+              "17/06/2026": true,
+              "24/06/2026": true,
+              "08/07/2026": true,
+              "26/08/2026": true
+            },
             "observaciones": ""
           },
           {
@@ -2959,8 +3252,102 @@
             "pabellon": "16",
             "fecha_inscripcion": "2026-09-07",
             "fecha_vencimiento_carnet": "2026-03-10",
-            "asist": {},
+            "asist": {
+              "06/05/2026": true,
+              "20/07/2026": true,
+              "27/05/2026": true,
+              "03/06/2026": true,
+              "10/06/2026": true,
+              "17/06/2026": true,
+              "24/06/2026": true,
+              "08/07/2026": true,
+              "26/08/2026": true
+            },
             "observaciones": ""
+          },
+          {
+            "id": "1776782465061-g9bdd",
+            "apellido": "VIDAL SANZANA",
+            "nombre": "LUIS MIGUEL",
+            "dni": "33367713",
+            "pabellon": "",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "2026-07-30",
+            "asist": {
+              "06/05/2026": true,
+              "20/07/2026": true,
+              "27/05/2026": true,
+              "03/06/2026": true,
+              "10/06/2026": true,
+              "17/06/2026": true,
+              "24/06/2026": true,
+              "08/07/2026": true,
+              "26/08/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
+          },
+          {
+            "id": "1776782553435-6ug5t",
+            "apellido": "LAZARTE",
+            "nombre": "VICTOR ALEJANDRO",
+            "dni": "37012139",
+            "pabellon": "",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "2026-07-30",
+            "asist": {
+              "06/05/2026": true,
+              "20/07/2026": true,
+              "27/05/2026": true,
+              "03/06/2026": true,
+              "10/06/2026": true,
+              "17/06/2026": true,
+              "24/06/2026": true,
+              "08/07/2026": true,
+              "26/08/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
+          },
+          {
+            "id": "1776782619962-8dlpa",
+            "apellido": "VELIZ",
+            "nombre": "JESUS",
+            "dni": "36.384.828",
+            "pabellon": "13",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "2026-07-30",
+            "asist": {
+              "06/05/2026": true,
+              "20/07/2026": true,
+              "27/05/2026": true,
+              "03/06/2026": true,
+              "10/06/2026": true,
+              "17/06/2026": true,
+              "24/06/2026": true,
+              "08/07/2026": true,
+              "26/08/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
+          },
+          {
+            "id": "1776782685165-mv92w",
+            "apellido": "FIEGO MERGEN",
+            "nombre": "DANIEL EDGARDO",
+            "dni": "31721603",
+            "pabellon": "16",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "2026-07-30",
+            "asist": {
+              "06/05/2026": true,
+              "20/07/2026": true,
+              "27/05/2026": true,
+              "03/06/2026": true,
+              "10/06/2026": true,
+              "17/06/2026": true,
+              "24/06/2026": true,
+              "08/07/2026": true,
+              "26/08/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
           }
         ]
       },
@@ -3530,8 +3917,81 @@
             "pabellon": "13",
             "fecha_inscripcion": "2026-04-21",
             "fecha_vencimiento_carnet": "2026-10-30",
-            "asist": {},
+            "asist": {
+              "26/05/2026": true,
+              "01/06/2026": true,
+              "08/06/2026": true,
+              "15/06/2026": true,
+              "22/06/2026": true,
+              "29/06/2026": true,
+              "06/07/2026": true,
+              "13/07/2026": true,
+              "20/07/2026": true,
+              "27/07/2026": true,
+              "03/08/2026": true,
+              "10/08/2026": true,
+              "17/08/2026": true,
+              "24/08/2026": true,
+              "31/08/2026": true,
+              "07/09/2026": true
+            },
             "observaciones": ""
+          },
+          {
+            "id": "1776782553435-6ug5t",
+            "apellido": "LAZARTE",
+            "nombre": "VICTOR ALEJANDRO",
+            "dni": "37012139",
+            "pabellon": "",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "2026-07-30",
+            "asist": {
+              "26/05/2026": true,
+              "01/06/2026": true,
+              "08/06/2026": true,
+              "15/06/2026": true,
+              "22/06/2026": true,
+              "29/06/2026": true,
+              "06/07/2026": true,
+              "13/07/2026": true,
+              "20/07/2026": true,
+              "27/07/2026": true,
+              "03/08/2026": true,
+              "10/08/2026": true,
+              "17/08/2026": true,
+              "24/08/2026": true,
+              "31/08/2026": true,
+              "07/09/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
+          },
+          {
+            "id": "1776782685165-mv92w",
+            "apellido": "FIEGO MERGEN",
+            "nombre": "DANIEL EDGARDO",
+            "dni": "31721603",
+            "pabellon": "16",
+            "fecha_inscripcion": "",
+            "fecha_vencimiento_carnet": "2026-07-30",
+            "asist": {
+              "26/05/2026": true,
+              "01/06/2026": true,
+              "08/06/2026": true,
+              "15/06/2026": true,
+              "22/06/2026": true,
+              "29/06/2026": true,
+              "06/07/2026": true,
+              "13/07/2026": true,
+              "20/07/2026": true,
+              "27/07/2026": true,
+              "03/08/2026": true,
+              "10/08/2026": true,
+              "17/08/2026": true,
+              "24/08/2026": true,
+              "31/08/2026": true,
+              "07/09/2026": true
+            },
+            "observaciones": "Trabajador CPU Batán - asistencia automática"
           }
         ]
       },
@@ -3625,7 +4085,10 @@
             "pabellon": "16",
             "fecha_inscripcion": "2026-09-07",
             "fecha_vencimiento_carnet": "2026-03-10",
-            "asist": {},
+            "asist": {
+              "31/08/2026": true,
+              "07/09/2026": true
+            },
             "observaciones": ""
           },
           {
@@ -3720,7 +4183,10 @@
             "pabellon": "14",
             "fecha_inscripcion": "2026-09-07",
             "fecha_vencimiento_carnet": "2026-10-30",
-            "asist": {},
+            "asist": {
+              "31/08/2026": true,
+              "07/09/2026": true
+            },
             "observaciones": ""
           },
           {
@@ -5647,7 +6113,9 @@
         "puesto": "",
         "vencimiento_carnet": "2026-03-10"
       }
-    ]
+    ],
+    "version": 2,
+    "last_updated": "2026-09-08T12:01:00-03:00"
   },
   "metadata": {
     "id": "69e13cfc856a682189404f5f",
