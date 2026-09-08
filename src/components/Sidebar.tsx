@@ -41,10 +41,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   `;
 
   return (
-    <aside className={`w-64 flex-shrink-0 border-r min-h-[calc(100vh-61px)] p-4 flex flex-col justify-between transition-colors duration-200 ${
+    <aside className={`w-full md:w-64 md:flex-shrink-0 border-b md:border-b-0 md:border-r min-h-0 md:min-h-[calc(100vh-61px)] max-h-[38vh] md:max-h-none overflow-y-auto p-2 sm:p-4 flex flex-col justify-between transition-colors duration-200 ${
       darkMode ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
     }`}>
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-6">
         {/* Navigation links */}
         <div className="space-y-1">
           <p className={`px-3 text-xs font-semibold uppercase tracking-wider mb-2 ${darkMode ? 'text-slate-400' : 'text-slate-400'}`}>
@@ -141,7 +141,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Footer institutional note */}
-      <div className={`pt-4 border-t text-xs text-center ${darkMode ? 'border-slate-800 text-slate-500' : 'border-slate-100 text-slate-400'}`}>
+      <div className={`hidden md:block pt-4 border-t text-xs text-center ${darkMode ? 'border-slate-800 text-slate-500' : 'border-slate-100 text-slate-400'}`}>
         <p className="font-medium">CPU Batán © 2026</p>
         <p className="mt-0.5">Control de Asistencia</p>
       </div>
