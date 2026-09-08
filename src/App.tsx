@@ -39,9 +39,16 @@ export default function App() {
       }
     });
 
+    // Sincronización entre dispositivos: consulta Supabase cada 3 segundos.
+    const stopRealtime = StorageService.startRealtime((fresh) => setData(current => {
+      if (!current || fresh.last_updated !== current.last_updated) return fresh;
+      return current;
+    }));
+
     // Check dark mode preference
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     setDarkMode(prefersDark);
+    return stopRealtime;
   }, []);
 
   const showToast = (msg: string, type: 'success' | 'error' | 'info' = 'success') => {
