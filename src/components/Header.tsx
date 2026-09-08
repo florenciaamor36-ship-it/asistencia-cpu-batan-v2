@@ -43,8 +43,8 @@ export const Header: React.FC<HeaderProps> = ({
     }`}>
       {/* Left: Logo & Title */}
       <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-        <div className="w-44 h-11 sm:w-56 sm:h-12 rounded-xl bg-white flex items-center justify-center shadow-md overflow-hidden shrink-0">
-          <img src="/icons/logo-cpu.png" alt="Comunidad Pastoral Universitaria" className="w-full h-full object-contain" />
+        <div className={`w-44 h-11 sm:w-56 sm:h-12 rounded-xl flex items-center justify-center overflow-hidden shrink-0 ${darkMode ? 'bg-slate-900' : 'bg-white'}`}>
+          <img src={darkMode ? '/icons/logo-cpu-dark.png' : '/icons/logo-cpu-light.png'} alt="Comunidad Pastoral Universitaria" className="w-full h-full object-contain" />
         </div>
         <div>
           <h1 className="text-sm sm:text-lg font-bold tracking-tight">CPU BATÁN</h1>
