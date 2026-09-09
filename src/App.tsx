@@ -15,6 +15,7 @@ import { StudentDetailModal } from './components/StudentDetailModal';
 import { DuplicateModal } from './components/DuplicateModal';
 import { Toast } from './components/Toast';
 import { AboutView } from './components/AboutView';
+import { InstallPrompt } from './components/InstallPrompt';
 
 export default function App() {
   const [data, setData] = useState<AppData | null>(null);
@@ -105,6 +106,8 @@ export default function App() {
         onToggleDarkMode={() => setDarkMode(!darkMode)}
         onRefreshData={handleRefreshData}
       />
+
+      <InstallPrompt darkMode={darkMode} />
 
       {/* Main Body Layout */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-w-0">
