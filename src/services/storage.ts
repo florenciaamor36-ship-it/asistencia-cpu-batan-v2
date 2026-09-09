@@ -45,7 +45,10 @@ export const StorageService = {
   async loadData(): Promise<AppData> {
     try {
       if (SUPABASE_KEY) {
-        const res = await fetch(`${API}?id=eq.1&select=payload,updated_at`, { headers: headers() });
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 8000);
+        const res = await fetch(`${API}?id=eq.1&select=payload,updated_at`, { headers: headers(), signal: controller.signal });
+        window.clearTimeout(timeout);
         if (res.ok) {
           const rows = await res.json();
           const normalized = normalize(rows?.[0]);
@@ -55,8 +58,7 @@ export const StorageService = {
     } catch (e) { console.warn('Supabase no disponible; usando caché local.', e); }
     const local = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (local) { try { const n = normalize(JSON.parse(local)); if (n) return n; } catch {} }
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(INITIAL_DATA));
-    return INITIAL_DATA;
+    throw new Error('No se pudo cargar la información.');
   },
 
   async saveData(data: AppData): Promise<boolean> {

@@ -22,6 +22,8 @@ export default function App() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
   const [role, setRole] = useState<'admin' | 'espectador'>(StorageService.getRole());
   const [darkMode, setDarkMode] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   // Modals state
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -30,24 +32,26 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<{ msg: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   useEffect(() => {
-    // Load initial data
+    let active = true;
+    let stopRealtime = () => {};
+    setData(null);
+    setLoadError(false);
+
+    // Carga inicial con timeout: si no hay red ni caché, mostramos la pantalla de conexión.
     StorageService.loadData().then(loaded => {
+      if (!active) return;
       setData(loaded);
-      if (loaded.materias && loaded.materias.length > 0) {
-        setSelectedSubjectId(loaded.materias[0].id);
-      }
-    });
+      if (loaded.materias && loaded.materias.length > 0) setSelectedSubjectId(loaded.materias[0].id);
+      // Sincronización entre dispositivos: consulta Supabase cada 3 segundos.
+      stopRealtime = StorageService.startRealtime((fresh) => setData(current => {
+        if (!current || fresh.last_updated !== current.last_updated) return fresh;
+        return current;
+      }));
+    }).catch(() => { if (active) setLoadError(true); });
 
-    // Sincronización entre dispositivos: consulta Supabase cada 3 segundos.
-    const stopRealtime = StorageService.startRealtime((fresh) => setData(current => {
-      if (!current || fresh.last_updated !== current.last_updated) return fresh;
-      return current;
-    }));
-
-    // La app inicia en modo oscuro por defecto.
     setDarkMode(true);
-    return stopRealtime;
-  }, []);
+    return () => { active = false; stopRealtime(); };
+  }, [retryKey]);
 
   const showToast = (msg: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToastMessage({ msg, type });
@@ -74,12 +78,17 @@ export default function App() {
   };
 
   if (!data) {
+    if (loadError) return (
+      <div className="min-h-screen flex items-center justify-center bg-white text-slate-800 p-4">
+        <div className="w-full max-w-2xl text-center">
+          <img src="/offline-error.jpg" alt="Error de conexión" className="w-full max-h-[70vh] object-contain mx-auto" />
+          <button onClick={() => setRetryKey(k => k + 1)} className="mt-3 px-8 py-3 rounded-full bg-slate-700 hover:bg-slate-800 text-white font-semibold transition">Reintentar</button>
+        </div>
+      </div>
+    );
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-900 text-white">
-        <div className="text-center space-y-3">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-sm font-medium">Cargando CPU Batán — Control de Asistencia...</p>
-        </div>
+        <div className="text-center space-y-3"><div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div><p className="text-sm font-medium">Cargando CPU Batán — Control de Asistencia...</p></div>
       </div>
     );
   }
