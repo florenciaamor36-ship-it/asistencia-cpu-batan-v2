@@ -7,6 +7,14 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://ayoxwnqzrfojk
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const API = `${SUPABASE_URL}/rest/v1/app_data`;
 
+function fechaOrden(valor: string) {
+  const iso = String(valor || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const dmy = String(valor || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
+  return String(valor || '');
+}
+
 function aplicarAsistenciaAutomaticaTrabajadores(target: any): any {
   const normalizar = (valor: unknown) => String(valor ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const coincide = (a: any, w: any) => {
@@ -15,6 +23,8 @@ function aplicarAsistenciaAutomaticaTrabajadores(target: any): any {
   };
   const workers = Array.isArray(target?.trabajadores) ? target.trabajadores : [];
   for (const materia of (target?.materias || [])) {
+    if (!Array.isArray(materia.fechas)) materia.fechas = [];
+    materia.fechas = Array.from(new Set(materia.fechas)).sort((a: string, b: string) => fechaOrden(a).localeCompare(fechaOrden(b)));
     if (!Array.isArray(materia.alumnos)) materia.alumnos = [];
     for (const worker of workers) {
       let alumno = materia.alumnos.find((x: any) => coincide(x, worker));
