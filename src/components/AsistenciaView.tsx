@@ -22,6 +22,14 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
+const dateSortKey = (value: string) => {
+  const iso = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const dmy = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
+  return value;
+};
+
 const formatDateDisplay = (value: string) => {
   if (!value) return '';
   const ddmmyyyy = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -270,10 +278,43 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
       return;
     }
 
-    const updatedFechas = [...subject.fechas, newDateInput].sort();
+    const workers = data.trabajadores || [];
+    const normalizar = (value: unknown) => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const coincideTrabajador = (alumno: any, trabajador: any) => {
+      const alumnoDni = normalizar(alumno.dni);
+      const trabajadorDni = normalizar(trabajador.dni);
+      return (alumnoDni && trabajadorDni && alumnoDni === trabajadorDni) ||
+        (normalizar(alumno.apellido) === normalizar(trabajador.apellido) && normalizar(alumno.nombre) === normalizar(trabajador.nombre));
+    };
+
+    // Orden cronológico real, incluso si existen fechas antiguas en DD/MM/YYYY
+    // mezcladas con las nuevas fechas ISO del selector HTML.
     const updatedMaterias = data.materias.map(m => {
-      if (m.id !== subject.id) return m;
-      return { ...m, fechas: updatedFechas };
+      const fechas = m.id === subject.id
+        ? Array.from(new Set([...m.fechas, newDateInput])).sort((a, b) => dateSortKey(a).localeCompare(dateSortKey(b)))
+        : m.fechas;
+      const alumnos = m.alumnos.map(alu => {
+        const worker = workers.find(w => coincideTrabajador(alu, w));
+        if (!worker) return alu;
+        const asist = { ...(alu.asist || {}) };
+        fechas.forEach(fecha => { asist[fecha] = true; });
+        return { ...alu, asist };
+      });
+      // Si un trabajador todavía no estaba en la planilla, incorporarlo y
+      // dejarlo presente en todas las fechas de esa materia.
+      const existentes = new Set(alumnos.map(a => a.id));
+      const faltantes = workers.filter(w => !alumnos.some(a => coincideTrabajador(a, w))).map(w => ({
+        id: w.id,
+        apellido: w.apellido,
+        nombre: w.nombre,
+        dni: w.dni,
+        pabellon: w.pabellon || '',
+        fecha_inscripcion: '',
+        fecha_vencimiento_carnet: w.vencimiento_carnet || '',
+        asist: Object.fromEntries(fechas.map(fecha => [fecha, true])),
+        observaciones: 'Trabajador CPU Batán - asistencia automática'
+      }));
+      return { ...m, fechas, alumnos: [...alumnos, ...faltantes.filter(a => !existentes.has(a.id))] };
     });
 
     onUpdateData({ ...data, materias: updatedMaterias });
