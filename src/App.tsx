@@ -63,13 +63,22 @@ export default function App() {
 
   const handleUpdateData = async (newData: AppData) => {
     setData(newData);
-    await StorageService.saveData(newData);
+    try {
+      const saved = await StorageService.saveData(newData);
+      if (!saved) showToast('No se pudo sincronizar con el servidor. Los cambios quedaron solo en este dispositivo.', 'error');
+    } catch {
+      showToast('No se pudo sincronizar con el servidor. Los cambios quedaron solo en este dispositivo.', 'error');
+    }
   };
 
   const handleRefreshData = async () => {
-    const fresh = await StorageService.loadData();
-    setData(fresh);
-    showToast("Datos actualizados desde el servidor.", "success");
+    try {
+      const fresh = await StorageService.loadRemoteData();
+      setData(fresh);
+      showToast('Datos actualizados desde el servidor.', 'success');
+    } catch {
+      showToast('No se pudieron actualizar los datos del servidor. Se mantienen los datos actuales.', 'error');
+    }
   };
 
   const handleLogout = () => {

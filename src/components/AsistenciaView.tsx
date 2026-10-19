@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { AppData, Subject, Student } from '../types';
+import { AppData, Subject } from '../types';
 import { 
   Calendar, 
   Clock, 
@@ -21,14 +21,10 @@ import {
   ListChecks
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { latestDateChronologically, sameCalendarDate, sortDatesChronologically, todayISODate } from '../utils/dates';
+import { markWorkersPresentForNewDate } from '../utils/attendance';
 
-const dateSortKey = (value: string) => {
-  const iso = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
-  const dmy = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
-  return value;
-};
+const EMPTY_SUBJECT: Subject = { id: '', nombre: '', dias: [], horario: '', fechas: [], alumnos: [] };
 
 const formatDateDisplay = (value: string) => {
   if (!value) return '';
@@ -56,12 +52,14 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
   darkMode,
   showToast
 }) => {
-  const subject = data.materias.find(m => m.id === subjectId) || data.materias[0];
+  const subject = data.materias.find(m => m.id === subjectId) || data.materias[0] || EMPTY_SUBJECT;
+  const fechasOrdenadas = useMemo(
+    () => sortDatesChronologically(subject.fechas || []),
+    [subject.fechas]
+  );
 
-  const [selectedDate, setSelectedDate] = useState<string>(
-    subject && subject.fechas && subject.fechas.length > 0 
-      ? subject.fechas[subject.fechas.length - 1] 
-      : new Date().toISOString().split('T')[0]
+  const [selectedDate, setSelectedDate] = useState<string>(() =>
+    latestDateChronologically(fechasOrdenadas) || todayISODate()
   );
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,16 +69,11 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
   const [lastAction, setLastAction] = useState<{ studentId: string; date: string; prevVal: any } | null>(null);
   const [viewModeType, setViewModeType] = useState<'diario' | 'matriz'>('diario');
 
-  // Ensure selectedDate is valid
+  // Initialize/switch to the latest chronological class date, without resetting
+  // a user's manually selected older date on every realtime refresh.
   React.useEffect(() => {
-    if (subject && subject.fechas && !subject.fechas.includes(selectedDate) && subject.fechas.length > 0) {
-      setSelectedDate(subject.fechas[subject.fechas.length - 1]);
-    }
+    setSelectedDate(latestDateChronologically(fechasOrdenadas) || '');
   }, [subjectId]);
-
-  if (!subject) {
-    return <div className="p-6 text-center text-slate-500">No hay materias seleccionadas.</div>;
-  }
 
   // Extract unique pabellones in this subject
   const pabellones = useMemo(() => {
@@ -141,6 +134,10 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     });
     return totalC > 0 ? Math.round((presC / totalC) * 100) : 0;
   }, [subject]);
+
+  if (!data.materias.length) {
+    return <div className="p-6 text-center text-slate-500">No hay materias seleccionadas.</div>;
+  }
 
   const handleSetAttendance = (studentId: string, status: boolean | string) => {
     if (role === 'espectador') {
@@ -273,48 +270,20 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
   const handleAddDate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDateInput) return;
-    if (subject.fechas.includes(newDateInput)) {
+    if (subject.fechas.some(fecha => sameCalendarDate(fecha, newDateInput))) {
       showToast("La fecha ya existe en esta materia.", "error");
       return;
     }
 
     const workers = data.trabajadores || [];
-    const normalizar = (value: unknown) => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    const coincideTrabajador = (alumno: any, trabajador: any) => {
-      const alumnoDni = normalizar(alumno.dni);
-      const trabajadorDni = normalizar(trabajador.dni);
-      return (alumnoDni && trabajadorDni && alumnoDni === trabajadorDni) ||
-        (normalizar(alumno.apellido) === normalizar(trabajador.apellido) && normalizar(alumno.nombre) === normalizar(trabajador.nombre));
-    };
 
-    // Orden cronológico real, incluso si existen fechas antiguas en DD/MM/YYYY
-    // mezcladas con las nuevas fechas ISO del selector HTML.
+    // Cada fecha toma una copia de la lista de trabajadores vigente en ese momento.
+    // Las fechas históricas y sus asistencias nunca se reescriben aquí.
     const updatedMaterias = data.materias.map(m => {
-      const fechas = m.id === subject.id
-        ? Array.from(new Set([...m.fechas, newDateInput])).sort((a, b) => dateSortKey(a).localeCompare(dateSortKey(b)))
-        : m.fechas;
-      const alumnos = m.alumnos.map(alu => {
-        const worker = workers.find(w => coincideTrabajador(alu, w));
-        if (!worker) return alu;
-        const asist = { ...(alu.asist || {}) };
-        fechas.forEach(fecha => { asist[fecha] = true; });
-        return { ...alu, asist };
-      });
-      // Si un trabajador todavía no estaba en la planilla, incorporarlo y
-      // dejarlo presente en todas las fechas de esa materia.
-      const existentes = new Set(alumnos.map(a => a.id));
-      const faltantes = workers.filter(w => !alumnos.some(a => coincideTrabajador(a, w))).map(w => ({
-        id: w.id,
-        apellido: w.apellido,
-        nombre: w.nombre,
-        dni: w.dni,
-        pabellon: w.pabellon || '',
-        fecha_inscripcion: '',
-        fecha_vencimiento_carnet: w.vencimiento_carnet || '',
-        asist: Object.fromEntries(fechas.map(fecha => [fecha, true])),
-        observaciones: 'Trabajador CPU Batán - asistencia automática'
-      }));
-      return { ...m, fechas, alumnos: [...alumnos, ...faltantes.filter(a => !existentes.has(a.id))] };
+      if (m.id !== subject.id) return m;
+      const fechas = sortDatesChronologically([...m.fechas, newDateInput]);
+      const alumnos = markWorkersPresentForNewDate(m.alumnos, workers, newDateInput);
+      return { ...m, fechas, alumnos };
     });
 
     onUpdateData({ ...data, materias: updatedMaterias });
@@ -334,7 +303,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
       return;
     }
 
-    const updatedFechas = subject.fechas.filter(d => d !== dateToDelete);
+    const updatedFechas = sortDatesChronologically(subject.fechas.filter(d => d !== dateToDelete));
     const updatedMaterias = data.materias.map(m => {
       if (m.id !== subject.id) return m;
       const updatedAlumnos = m.alumnos.map(alu => {
@@ -346,9 +315,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     });
 
     onUpdateData({ ...data, materias: updatedMaterias });
-    if (updatedFechas.length > 0) {
-      setSelectedDate(updatedFechas[updatedFechas.length - 1]);
-    }
+    setSelectedDate(latestDateChronologically(updatedFechas) || '');
     showToast("Fecha de clase eliminada.", "info");
   };
 
@@ -361,7 +328,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
         'DNI': alu.dni || '',
         'PABELLÓN': alu.pabellon || ''
       };
-      subject.fechas.forEach(f => {
+      fechasOrdenadas.forEach(f => {
         const val = alu.asist?.[f];
         row[f] = val === true || val === 'presente' ? 'Presente' : val === false || val === 'ausente' ? 'Ausente' : val === 'justificado' ? 'Justificado' : 'Sin marcar';
       });
@@ -444,7 +411,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
           <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
             <p className="text-xs font-semibold uppercase tracking-wider mb-3 text-slate-400">Fechas de Clase Registradas ({subject.fechas.length})</p>
             <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-              {subject.fechas.map((f) => {
+              {fechasOrdenadas.map((f) => {
                 const isSelected = f === selectedDate;
                 return (
                   <div
@@ -681,7 +648,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                 }`}>
                   <th className={`min-w-[240px] py-3 px-4 font-semibold sticky left-0 z-20 shadow-xs ${darkMode ? 'bg-slate-900' : 'bg-slate-100'}`}>Alumno</th>
                   <th className="min-w-[90px] py-3 px-3 font-semibold">Pabellón</th>
-                  {subject.fechas.map(f => (
+                  {fechasOrdenadas.map(f => (
                     <th key={f} className="min-w-[84px] py-3 px-3 font-semibold text-center whitespace-nowrap">
                       {formatDateDisplay(f)}
                     </th>
@@ -704,7 +671,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                       <td className="min-w-[90px] py-2.5 px-3 text-xs text-slate-400 whitespace-nowrap">
                         {alu.pabellon || '—'}
                       </td>
-                      {subject.fechas.map(f => {
+                      {fechasOrdenadas.map(f => {
                         const val = alu.asist?.[f];
                         const isP = val === true || val === 'presente';
                         const isA = val === false || val === 'ausente';

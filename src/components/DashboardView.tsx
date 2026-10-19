@@ -1,6 +1,7 @@
 import React from 'react';
 import { AppData, ViewMode } from '../types';
 import { Users, BookOpen, Briefcase, CalendarCheck, TrendingUp, ArrowRight, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { todayISODate } from '../utils/dates';
 
 interface DashboardViewProps {
   data: AppData;
@@ -41,7 +42,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const avgAttendance = totalRecords > 0 ? Math.round((presentRecords / totalRecords) * 100) : 0;
 
   // Carnet status counts
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayISODate();
   let carnetsVencidos = 0;
   let carnetsVencidosInactivos = 0;
   let carnetsProximos = 0;

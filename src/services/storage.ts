@@ -1,5 +1,5 @@
 import { AppData, Student } from '../types';
-import { INITIAL_DATA } from '../data/defaultData';
+import { sortDatesChronologically } from '../utils/dates';
 
 const LOCAL_STORAGE_KEY = 'cpu_batan_asistencia_data_v1';
 const ROLE_KEY = 'cpu_batan_user_role';
@@ -7,34 +7,12 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://ayoxwnqzrfojk
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const API = `${SUPABASE_URL}/rest/v1/app_data`;
 
-function fechaOrden(valor: string) {
-  const iso = String(valor || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
-  const dmy = String(valor || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
-  return String(valor || '');
-}
-
-function aplicarAsistenciaAutomaticaTrabajadores(target: any): any {
-  const normalizar = (valor: unknown) => String(valor ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const coincide = (a: any, w: any) => {
-    const da = normalizar(a.dni), dw = normalizar(w.dni);
-    return (da && dw && da === dw) || (normalizar(a.apellido) === normalizar(w.apellido) && normalizar(a.nombre) === normalizar(w.nombre));
-  };
-  const workers = Array.isArray(target?.trabajadores) ? target.trabajadores : [];
+function normalizarPlanillas(target: any): any {
   for (const materia of (target?.materias || [])) {
     if (!Array.isArray(materia.fechas)) materia.fechas = [];
-    materia.fechas = Array.from(new Set(materia.fechas)).sort((a: string, b: string) => fechaOrden(a).localeCompare(fechaOrden(b)));
+    // Ordena una copia lógica en memoria sin eliminar fechas duplicadas ni registros.
+    materia.fechas = sortDatesChronologically(materia.fechas);
     if (!Array.isArray(materia.alumnos)) materia.alumnos = [];
-    for (const worker of workers) {
-      let alumno = materia.alumnos.find((x: any) => coincide(x, worker));
-      if (!alumno) {
-        alumno = { id: worker.id, apellido: worker.apellido, nombre: worker.nombre, dni: worker.dni, pabellon: worker.pabellon || '', fecha_inscripcion: '', fecha_vencimiento_carnet: worker.vencimiento_carnet || '', asist: {}, observaciones: 'Trabajador CPU Batán - asistencia automática' };
-        materia.alumnos.push(alumno);
-      }
-      alumno.asist = { ...(alumno.asist || {}) };
-      (materia.fechas || []).forEach((f: string) => alumno.asist[f] = true);
-    }
   }
   return target;
 }
@@ -42,7 +20,7 @@ function aplicarAsistenciaAutomaticaTrabajadores(target: any): any {
 function normalize(raw: any): AppData | null {
   const target = raw?.payload?.record || raw?.record || raw;
   if (!target?.materias) return null;
-  aplicarAsistenciaAutomaticaTrabajadores(target);
+  normalizarPlanillas(target);
   return { materias: target.materias || [], alumnos: target.alumnos || [], trabajadores: target.trabajadores || [], version: target.version || 1, last_updated: target.last_updated || new Date().toISOString() };
 }
 
@@ -52,19 +30,27 @@ export const StorageService = {
   getRole(): 'admin' | 'espectador' { return localStorage.getItem(ROLE_KEY) === 'admin' ? 'admin' : 'espectador'; },
   setRole(role: 'admin' | 'espectador') { localStorage.setItem(ROLE_KEY, role); },
 
+  async loadRemoteData(): Promise<AppData> {
+    if (!SUPABASE_KEY) throw new Error('No hay conexión configurada con el servidor.');
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 8000);
+    let res: Response;
+    try {
+      res = await fetch(`${API}?id=eq.1&select=payload,updated_at`, { headers: headers(), signal: controller.signal });
+    } finally {
+      window.clearTimeout(timeout);
+    }
+    if (!res.ok) throw new Error('No se pudieron actualizar los datos desde el servidor.');
+    const rows = await res.json();
+    const normalized = normalize(rows?.[0]);
+    if (!normalized) throw new Error('El servidor no devolvió datos válidos.');
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalized));
+    return normalized;
+  },
+
   async loadData(): Promise<AppData> {
     try {
-      if (SUPABASE_KEY) {
-        const controller = new AbortController();
-        const timeout = window.setTimeout(() => controller.abort(), 8000);
-        const res = await fetch(`${API}?id=eq.1&select=payload,updated_at`, { headers: headers(), signal: controller.signal });
-        window.clearTimeout(timeout);
-        if (res.ok) {
-          const rows = await res.json();
-          const normalized = normalize(rows?.[0]);
-          if (normalized) { localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalized)); return normalized; }
-        }
-      }
+      return await this.loadRemoteData();
     } catch (e) { console.warn('Supabase no disponible; usando caché local.', e); }
     const local = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (local) { try { const n = normalize(JSON.parse(local)); if (n) return n; } catch {} }
@@ -72,12 +58,21 @@ export const StorageService = {
   },
 
   async saveData(data: AppData): Promise<boolean> {
-    data.last_updated = new Date().toISOString();
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+    const dataToSave: AppData = {
+      ...data,
+      materias: data.materias.map(materia => ({
+        ...materia,
+        fechas: sortDatesChronologically(Array.isArray(materia.fechas) ? materia.fechas : [])
+      })),
+      last_updated: new Date().toISOString()
+    };
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
     if (!SUPABASE_KEY) return false;
     try {
-      const res = await fetch(`${API}?id=eq.1`, { method: 'PATCH', headers: { ...headers(), Prefer: 'return=minimal' }, body: JSON.stringify({ payload: { record: data }, updated_at: data.last_updated }) });
-      return res.ok;
+      const res = await fetch(`${API}?id=eq.1`, { method: 'PATCH', headers: { ...headers(), Prefer: 'return=representation' }, body: JSON.stringify({ payload: { record: dataToSave }, updated_at: dataToSave.last_updated }) });
+      if (!res.ok) return false;
+      const updatedRows = await res.json();
+      return Array.isArray(updatedRows) && updatedRows.length > 0;
     } catch (e) { console.warn('No se pudo guardar en Supabase.', e); return false; }
   },
 

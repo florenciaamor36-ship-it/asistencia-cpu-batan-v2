@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AppData } from '../types';
 import { Download, Upload, Database, FileJson, AlertTriangle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { sortDatesChronologically, todayISODate } from '../utils/dates';
 
 interface BackupViewProps {
   data: AppData;
@@ -27,7 +28,7 @@ export const BackupView: React.FC<BackupViewProps> = ({
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `respaldo_cpu_batan_${new Date().toISOString().split('T')[0]}.json`);
+    downloadAnchor.setAttribute("download", `respaldo_cpu_batan_${todayISODate()}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -48,7 +49,7 @@ export const BackupView: React.FC<BackupViewProps> = ({
       try {
         const raw = JSON.parse(event.target?.result as string);
         const json = raw && raw.record && raw.record.materias ? raw.record : raw;
-        if (!json || !json.materias || !json.alumnos) {
+        if (!json || !Array.isArray(json.materias) || !Array.isArray(json.alumnos)) {
           showToast("El archivo JSON no tiene la estructura válida de CPU Batán.", "error");
           return;
         }
@@ -64,22 +65,66 @@ export const BackupView: React.FC<BackupViewProps> = ({
   const handleConfirmImport = () => {
     if (!parsedImportData) return;
 
+    const imported: AppData = {
+      ...parsedImportData,
+      materias: Array.isArray(parsedImportData.materias) ? parsedImportData.materias.map(m => ({
+        ...m,
+        fechas: sortDatesChronologically(Array.isArray(m.fechas) ? m.fechas : []),
+        alumnos: Array.isArray(m.alumnos) ? m.alumnos : []
+      })) : [],
+      alumnos: Array.isArray(parsedImportData.alumnos) ? parsedImportData.alumnos : [],
+      trabajadores: Array.isArray(parsedImportData.trabajadores) ? parsedImportData.trabajadores : []
+    };
+
     let finalData: AppData;
     if (importMode === 'replace') {
-      finalData = parsedImportData;
+      finalData = { ...imported, last_updated: new Date().toISOString() };
     } else {
-      // Merge logic
-      const existingAlumnosMap = new Map(data.alumnos.map(a => [a.id, a]));
-      parsedImportData.alumnos.forEach(a => existingAlumnosMap.set(a.id, a));
+      // Merge adds records from the backup but existing database records always win conflicts.
+      const alumnosMap = new Map(data.alumnos.map(a => [a.id, a] as const));
+      imported.alumnos.forEach(a => {
+        const current = alumnosMap.get(a.id);
+        alumnosMap.set(a.id, current
+          ? { ...a, ...current, asist: { ...(a.asist || {}), ...(current.asist || {}) } }
+          : a);
+      });
 
-      const existingWorkersMap = new Map(data.trabajadores.map(t => [t.id, t]));
-      parsedImportData.trabajadores.forEach(t => existingWorkersMap.set(t.id, t));
+      const trabajadoresMap = new Map(data.trabajadores.map(t => [t.id, t] as const));
+      imported.trabajadores.forEach(t => {
+        if (!trabajadoresMap.has(t.id)) trabajadoresMap.set(t.id, t);
+      });
+
+      const materiasMap = new Map(data.materias.map(m => [m.id, m] as const));
+      imported.materias.forEach(m => {
+        const current = materiasMap.get(m.id);
+        if (!current) {
+          materiasMap.set(m.id, { ...m, fechas: sortDatesChronologically(m.fechas) });
+          return;
+        }
+        const alumnosMateria = new Map(current.alumnos.map(a => [a.id, a] as const));
+        m.alumnos.forEach(a => {
+          const currentStudent = alumnosMateria.get(a.id);
+          alumnosMateria.set(a.id, currentStudent
+            ? { ...a, ...currentStudent, asist: { ...(a.asist || {}), ...(currentStudent.asist || {}) } }
+            : a);
+        });
+        materiasMap.set(m.id, {
+          ...m,
+          ...current,
+          // Keep every current date entry (including duplicates); add backup dates only when the exact key is absent.
+          fechas: sortDatesChronologically([
+            ...current.fechas,
+            ...m.fechas.filter(date => !current.fechas.includes(date))
+          ]),
+          alumnos: Array.from(alumnosMateria.values())
+        });
+      });
 
       finalData = {
-        materias: parsedImportData.materias,
-        alumnos: Array.from(existingAlumnosMap.values()),
-        trabajadores: Array.from(existingWorkersMap.values()),
-        version: parsedImportData.version || 1,
+        materias: Array.from(materiasMap.values()),
+        alumnos: Array.from(alumnosMap.values()),
+        trabajadores: Array.from(trabajadoresMap.values()),
+        version: data.version || imported.version || 1,
         last_updated: new Date().toISOString()
       };
     }
@@ -87,7 +132,7 @@ export const BackupView: React.FC<BackupViewProps> = ({
     onUpdateData(finalData);
     setShowPreviewModal(false);
     setParsedImportData(null);
-    showToast("Datos importados y respaldados correctamente.", "success");
+    showToast(importMode === 'merge' ? 'Respaldo combinado sin reemplazar registros actuales.' : 'Respaldo restaurado.', 'success');
   };
 
   const cardClass = `p-6 rounded-2xl border ${darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`;
