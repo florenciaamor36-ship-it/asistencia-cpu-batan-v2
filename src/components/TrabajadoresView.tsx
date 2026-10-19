@@ -13,6 +13,7 @@ import {
   AlertTriangle 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { markWorkersPresentForAllDates } from '../utils/attendance';
 
 interface TrabajadoresViewProps {
   data: AppData;
@@ -130,12 +131,22 @@ export const TrabajadoresView: React.FC<TrabajadoresViewProps> = ({
         observaciones: formData.observaciones
       };
       updatedTrabajadores.push(newWorker);
-      showToast("Nuevo trabajador agregado correctamente.", "success");
+      showToast("Nuevo trabajador agregado y marcado presente en todas las fechas.", "success");
     }
+
+    const updatedMaterias = data.materias.map(materia => ({
+      ...materia,
+      alumnos: markWorkersPresentForAllDates(
+        materia.alumnos || [],
+        updatedTrabajadores,
+        materia.fechas || []
+      )
+    }));
 
     onUpdateData({
       ...data,
-      trabajadores: updatedTrabajadores
+      trabajadores: updatedTrabajadores,
+      materias: updatedMaterias
     });
     setIsModalOpen(false);
   };
@@ -382,3 +393,4 @@ export const TrabajadoresView: React.FC<TrabajadoresViewProps> = ({
     </div>
   );
 };
+
