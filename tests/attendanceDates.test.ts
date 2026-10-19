@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import { latestDateChronologically, sameCalendarDate, sortDatesChronologically } from '../src/utils/dates';
-import { markWorkersPresentForNewDate } from '../src/utils/attendance';
+import { markWorkersPresentForAllDates, markWorkersPresentForNewDate } from '../src/utils/attendance';
 import { Student, Worker } from '../src/types';
 
 describe('date ordering and worker attendance snapshots', () => {
@@ -40,4 +40,32 @@ describe('date ordering and worker attendance snapshots', () => {
     assert.equal(result[2].id, 'worker-2');
     assert.equal(result[2].asist['2026-10-13'], true);
   });
+
+  it('marks current workers present across all existing dates when the roster changes', () => {
+    const students: Student[] = [
+      {
+        id: 'student-1', apellido: 'PEREZ', nombre: 'ANA', dni: '123', pabellon: '',
+        fecha_inscripcion: '', fecha_vencimiento_carnet: '', asist: { '2026-06-30': false }
+      },
+      {
+        id: 'student-2', apellido: 'LOPEZ', nombre: 'LUIS', dni: '456', pabellon: '',
+        fecha_inscripcion: '', fecha_vencimiento_carnet: '', asist: { '2026-06-30': 'justificado' }
+      }
+    ];
+    const workers: Worker[] = [
+      { id: 'worker-1', apellido: 'PEREZ', nombre: 'ANA', dni: '123', pabellon: '', puesto: '', vencimiento_carnet: '' },
+      { id: 'worker-2', apellido: 'GOMEZ', nombre: 'MARTA', dni: '789', pabellon: '', puesto: '', vencimiento_carnet: '' }
+    ];
+
+    const result = markWorkersPresentForAllDates(students, workers, ['2026-06-30', '2026-10-13']);
+    assert.equal(result[0].asist['2026-06-30'], true);
+    assert.equal(result[0].asist['2026-10-13'], true);
+    assert.equal(result[1], students[1]);
+    const addedWorker = result.find(student => student.id === 'worker-2');
+    assert.ok(addedWorker);
+    assert.equal(addedWorker.asist['2026-06-30'], true);
+    assert.equal(addedWorker.asist['2026-10-13'], true);
+  });
+
 });
+

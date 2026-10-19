@@ -46,3 +46,18 @@ export function markWorkersPresentForNewDate(
 
   return [...result, ...missingWorkers];
 }
+
+/**
+ * Reconcile the current worker roster across every date already registered
+ * for a subject. Workers are always present; non-worker attendance is untouched.
+ */
+export function markWorkersPresentForAllDates(
+  students: Student[],
+  workers: Worker[],
+  dates: string[]
+): Student[] {
+  return dates.reduce(
+    (currentStudents, date) => markWorkersPresentForNewDate(currentStudents, workers, date),
+    students
+  );
+}
