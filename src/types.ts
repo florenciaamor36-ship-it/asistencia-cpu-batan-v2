@@ -10,6 +10,7 @@ export interface Student {
   fecha_vencimiento_carnet: string;
   asist: Record<string, boolean | string>; // date string -> status/boolean
   observaciones?: string;
+  estado?: string;
   materias?: string[]; // subject IDs or names
 }
 
