@@ -80,50 +80,48 @@ export const BackupView: React.FC<BackupViewProps> = ({
     if (importMode === 'replace') {
       finalData = { ...imported, last_updated: new Date().toISOString() };
     } else {
-      // Merge adds records from the backup but existing database records always win conflicts.
-      const alumnosMap = new Map(data.alumnos.map(a => [a.id, a] as const));
+      // Add-only merge: preserve every current record (even duplicate IDs);
+      // import rows only when they do not conflict with an existing ID.
+      const alumnosMerged = [...data.alumnos];
       imported.alumnos.forEach(a => {
-        const current = alumnosMap.get(a.id);
-        alumnosMap.set(a.id, current
-          ? { ...a, ...current, asist: { ...(a.asist || {}), ...(current.asist || {}) } }
-          : a);
+        if (!alumnosMerged.some(current => current.id === a.id)) alumnosMerged.push(a);
       });
 
-      const trabajadoresMap = new Map(data.trabajadores.map(t => [t.id, t] as const));
+      const trabajadoresMerged = [...data.trabajadores];
       imported.trabajadores.forEach(t => {
-        if (!trabajadoresMap.has(t.id)) trabajadoresMap.set(t.id, t);
+        if (!trabajadoresMerged.some(current => current.id === t.id)) trabajadoresMerged.push(t);
       });
 
-      const materiasMap = new Map(data.materias.map(m => [m.id, m] as const));
+      const materiasMerged = data.materias.map(m => ({
+        ...m,
+        fechas: sortDatesChronologically(m.fechas),
+        alumnos: [...m.alumnos]
+      }));
       imported.materias.forEach(m => {
-        const current = materiasMap.get(m.id);
-        if (!current) {
-          materiasMap.set(m.id, { ...m, fechas: sortDatesChronologically(m.fechas) });
+        const index = materiasMerged.findIndex(current => current.id === m.id);
+        if (index === -1) {
+          materiasMerged.push({ ...m, fechas: sortDatesChronologically(m.fechas) });
           return;
         }
-        const alumnosMateria = new Map(current.alumnos.map(a => [a.id, a] as const));
+
+        const current = materiasMerged[index];
+        const alumnosMateria = [...current.alumnos];
         m.alumnos.forEach(a => {
-          const currentStudent = alumnosMateria.get(a.id);
-          alumnosMateria.set(a.id, currentStudent
-            ? { ...a, ...currentStudent, asist: { ...(a.asist || {}), ...(currentStudent.asist || {}) } }
-            : a);
+          if (!alumnosMateria.some(existing => existing.id === a.id)) alumnosMateria.push(a);
         });
-        materiasMap.set(m.id, {
-          ...m,
-          ...current,
-          // Keep every current date entry (including duplicates); add backup dates only when the exact key is absent.
-          fechas: sortDatesChronologically([
-            ...current.fechas,
-            ...m.fechas.filter(date => !current.fechas.includes(date))
-          ]),
-          alumnos: Array.from(alumnosMateria.values())
-        });
+        // Keep every current date entry, including duplicates. Only add exact date
+        // keys absent from the current subject; never collapse any current entries.
+        const fechas = sortDatesChronologically([
+          ...current.fechas,
+          ...m.fechas.filter(date => !current.fechas.includes(date))
+        ]);
+        materiasMerged[index] = { ...current, fechas, alumnos: alumnosMateria };
       });
 
       finalData = {
-        materias: Array.from(materiasMap.values()),
-        alumnos: Array.from(alumnosMap.values()),
-        trabajadores: Array.from(trabajadoresMap.values()),
+        materias: materiasMerged,
+        alumnos: alumnosMerged,
+        trabajadores: trabajadoresMerged,
         version: data.version || imported.version || 1,
         last_updated: new Date().toISOString()
       };

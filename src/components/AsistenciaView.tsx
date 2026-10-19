@@ -411,11 +411,11 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
           <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
             <p className="text-xs font-semibold uppercase tracking-wider mb-3 text-slate-400">Fechas de Clase Registradas ({subject.fechas.length})</p>
             <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-              {fechasOrdenadas.map((f) => {
+              {fechasOrdenadas.map((f, dateIndex) => {
                 const isSelected = f === selectedDate;
                 return (
                   <div
-                    key={f}
+                    key={`${f}-${dateIndex}`}
                     className={`flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition border ${
                       isSelected 
                         ? 'bg-blue-600 border-blue-600 text-white shadow-md' 
@@ -648,8 +648,8 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                 }`}>
                   <th className={`min-w-[240px] py-3 px-4 font-semibold sticky left-0 z-20 shadow-xs ${darkMode ? 'bg-slate-900' : 'bg-slate-100'}`}>Alumno</th>
                   <th className="min-w-[90px] py-3 px-3 font-semibold">Pabellón</th>
-                  {fechasOrdenadas.map(f => (
-                    <th key={f} className="min-w-[84px] py-3 px-3 font-semibold text-center whitespace-nowrap">
+                  {fechasOrdenadas.map((f, dateIndex) => (
+                    <th key={`${f}-${dateIndex}`} className="min-w-[84px] py-3 px-3 font-semibold text-center whitespace-nowrap">
                       {formatDateDisplay(f)}
                     </th>
                   ))}
@@ -671,14 +671,14 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                       <td className="min-w-[90px] py-2.5 px-3 text-xs text-slate-400 whitespace-nowrap">
                         {alu.pabellon || '—'}
                       </td>
-                      {fechasOrdenadas.map(f => {
+                      {fechasOrdenadas.map((f, dateIndex) => {
                         const val = alu.asist?.[f];
                         const isP = val === true || val === 'presente';
                         const isA = val === false || val === 'ausente';
                         const isJ = val === 'justificado';
 
                         return (
-                          <td key={f} className="min-w-[84px] py-2.5 px-3 text-center">
+                          <td key={`${f}-${dateIndex}`} className="min-w-[84px] py-2.5 px-3 text-center">
                             <button
                               disabled={role === 'espectador'}
                               onClick={() => handleToggleMatrixCell(alu.id, f)}
