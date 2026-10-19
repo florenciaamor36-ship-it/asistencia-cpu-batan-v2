@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { AppData, Subject, Student } from '../types';
 import { BookOpen, Plus, Edit, Trash2, Users, Check, X, Calendar, Clock } from 'lucide-react';
 import { sortDatesChronologically, todayISODate } from '../utils/dates';
-import { markWorkersPresentForNewDate } from '../utils/attendance';
+import { createInitialSubjectRoster } from '../utils/attendance';
 
 interface MateriasViewProps {
   data: AppData;
@@ -84,7 +84,7 @@ export const MateriasView: React.FC<MateriasViewProps> = ({
         horario: formData.horario.trim(),
         fechas: sortDatesChronologically([firstClassDate]),
         // The initial date is a newly registered class date too: snapshot today's workers.
-        alumnos: markWorkersPresentForNewDate([...data.alumnos], data.trabajadores || [], firstClassDate)
+        alumnos: createInitialSubjectRoster(data.trabajadores || [], firstClassDate)
       };
       updatedMaterias.push(newSubject);
       showToast("Nueva materia creada correctamente.", "success");
@@ -362,3 +362,4 @@ export const MateriasView: React.FC<MateriasViewProps> = ({
     </div>
   );
 };
+

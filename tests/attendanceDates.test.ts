@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import { latestDateChronologically, sameCalendarDate, sortDatesChronologically } from '../src/utils/dates';
-import { markWorkersPresentForAllDates, markWorkersPresentForNewDate } from '../src/utils/attendance';
+import { createInitialSubjectRoster, markWorkersPresentForAllDates, markWorkersPresentForNewDate } from '../src/utils/attendance';
 import { Student, Worker } from '../src/types';
 
 describe('date ordering and worker attendance snapshots', () => {
@@ -67,5 +67,18 @@ describe('date ordering and worker attendance snapshots', () => {
     assert.equal(addedWorker.asist['2026-10-13'], true);
   });
 
+
+  it('starts a new subject with workers only, not the global student roster', () => {
+    const workers: Worker[] = [
+      { id: 'worker-1', apellido: 'GOMEZ', nombre: 'MARTA', dni: '789', pabellon: '', puesto: '', vencimiento_carnet: '' }
+    ];
+
+    const roster = createInitialSubjectRoster(workers, '2026-10-19');
+    assert.equal(roster.length, 1);
+    assert.equal(roster[0].id, 'worker-1');
+    assert.equal(roster[0].asist['2026-10-19'], true);
+  });
+
 });
+
 

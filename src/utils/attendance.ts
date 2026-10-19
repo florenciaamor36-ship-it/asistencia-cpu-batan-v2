@@ -61,3 +61,8 @@ export function markWorkersPresentForAllDates(
     students
   );
 }
+
+/** A new subject starts with workers only; students enroll explicitly. */
+export function createInitialSubjectRoster(workers: Worker[], date: string): Student[] {
+  return markWorkersPresentForNewDate([], workers, date);
+}
