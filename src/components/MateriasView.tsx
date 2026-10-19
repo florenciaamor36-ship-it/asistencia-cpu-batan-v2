@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { AppData, Subject, Student } from '../types';
 import { BookOpen, Plus, Edit, Trash2, Users, Check, X, Calendar, Clock } from 'lucide-react';
+import { sortDatesChronologically, todayISODate } from '../utils/dates';
+import { markWorkersPresentForNewDate } from '../utils/attendance';
 
 interface MateriasViewProps {
   data: AppData;
@@ -74,13 +76,15 @@ export const MateriasView: React.FC<MateriasViewProps> = ({
       }
       showToast("Materia actualizada correctamente.", "success");
     } else {
+      const firstClassDate = todayISODate();
       const newSubject: Subject = {
         id: `mat_${Date.now()}`,
         nombre: formData.nombre.trim(),
         dias: diasArr,
         horario: formData.horario.trim(),
-        fechas: [new Date().toISOString().split('T')[0]],
-        alumnos: [...data.alumnos] // por defecto se pueden inscribir todos o ninguno; iniciamos con padrón o vacío. Vamos a iniciar con todos o vacío según criterio. Iniciar vacío o clonar padrón. Clonemos padrón vacío o con todos. Pongamos todos para facilitar.
+        fechas: sortDatesChronologically([firstClassDate]),
+        // The initial date is a newly registered class date too: snapshot today's workers.
+        alumnos: markWorkersPresentForNewDate([...data.alumnos], data.trabajadores || [], firstClassDate)
       };
       updatedMaterias.push(newSubject);
       showToast("Nueva materia creada correctamente.", "success");
