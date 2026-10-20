@@ -554,14 +554,14 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                       </td>
                     </tr>
                   ) : (
-                    filteredStudents.map((alu) => {
+                    filteredStudents.map((alu, rowIndex) => {
                       const status = alu.asist?.[selectedDate];
                       const isPresent = status === true || status === 'presente';
                       const isAbsent = status === false || status === 'ausente';
                       const isJustified = status === 'justificado';
 
                       return (
-                        <tr key={alu.id} className={`transition-colors ${darkMode ? 'hover:bg-slate-750' : 'hover:bg-slate-50'}`}>
+                        <tr key={`${alu.id}-${alu.apellido}-${alu.nombre}-${rowIndex}`} className={`transition-colors ${darkMode ? 'hover:bg-slate-750' : 'hover:bg-slate-50'}`}>
                           <td className="py-3.5 px-4 font-bold">{alu.apellido}, {alu.nombre}</td>
                           <td className="py-3.5 px-4 font-mono text-xs">{alu.dni || '—'}</td>
                           <td className="py-3.5 px-4">
@@ -663,8 +663,8 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                     </td>
                   </tr>
                 ) : (
-                  filteredStudents.map(alu => (
-                    <tr key={alu.id} className={`transition-colors ${darkMode ? 'hover:bg-slate-750' : 'hover:bg-slate-50'}`}>
+                  filteredStudents.map((alu, rowIndex) => (
+                    <tr key={`${alu.id}-${alu.apellido}-${alu.nombre}-${rowIndex}`} className={`transition-colors ${darkMode ? 'hover:bg-slate-750' : 'hover:bg-slate-50'}`}>
                       <td className={`min-w-[240px] py-2.5 px-4 font-bold sticky left-0 z-10 shadow-xs whitespace-nowrap ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
                         {alu.apellido}, {alu.nombre}
                       </td>
