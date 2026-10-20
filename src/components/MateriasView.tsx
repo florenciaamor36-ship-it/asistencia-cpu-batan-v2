@@ -125,7 +125,7 @@ export const MateriasView: React.FC<MateriasViewProps> = ({
     } else {
       const studentObj = data.alumnos.find(s => s.id === studentId);
       if (studentObj) {
-        updatedSubjectAlumnos = [...managingSubject.alumnos, studentObj];
+        updatedSubjectAlumnos = [...managingSubject.alumnos, { ...studentObj, estado_inscripcion: 'inscripto' }];
       } else {
         updatedSubjectAlumnos = managingSubject.alumnos;
       }

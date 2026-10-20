@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { AppData, Subject } from '../types';
+import { AppData, EnrollmentStatus, Student, Subject } from '../types';
 import { 
   Calendar, 
   Clock, 
@@ -35,6 +35,54 @@ const formatDateDisplay = (value: string) => {
   return value;
 };
 
+type EnrollmentFilter = 'inscriptos' | 'pendientes' | 'no_inscriptos' | 'historicos' | 'todos';
+
+const normalizeRosterName = (value: unknown) => String(value ?? '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim();
+
+const normalizePerson = (value: unknown) => String(value ?? '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]/g, '');
+
+const isWorkerRecord = (student: Student, workers: AppData['trabajadores']) => workers.some(worker => {
+  const studentDni = normalizePerson(student.dni);
+  const workerDni = normalizePerson(worker.dni);
+  if (studentDni && workerDni && studentDni === workerDni) return true;
+  const studentName = `${normalizePerson(student.apellido)}${normalizePerson(student.nombre)}`;
+  const workerName = `${normalizePerson(worker.apellido)}${normalizePerson(worker.nombre)}`;
+  return Boolean(studentName && workerName && studentName === workerName);
+});
+
+const getEnrollmentStatus = (student: Student): EnrollmentStatus => {
+  switch (student.estado_inscripcion) {
+    case 'inscripto': return 'inscripto';
+    case 'no_inscripto': return 'no_inscripto';
+    case 'historico': return 'historico';
+    case 'pendiente': return 'pendiente';
+    default: return 'pendiente';
+  }
+};
+
+const enrollmentStatusLabel = (status: EnrollmentStatus) => ({
+  inscripto: 'Inscripto',
+  pendiente: 'Pendiente de confirmar',
+  no_inscripto: 'No inscripto',
+  historico: 'Histórico'
+}[status]);
+
+const enrollmentStatusClasses = (status: EnrollmentStatus, darkMode: boolean) => {
+  if (status === 'inscripto') return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300';
+  if (status === 'no_inscripto') return darkMode ? 'bg-red-950/60 text-red-300' : 'bg-red-100 text-red-700';
+  if (status === 'historico') return darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-600';
+  return darkMode ? 'bg-amber-950/60 text-amber-300' : 'bg-amber-100 text-amber-700';
+};
+
 interface AsistenciaViewProps {
   data: AppData;
   subjectId: string;
@@ -53,6 +101,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
   showToast
 }) => {
   const subject = data.materias.find(m => m.id === subjectId) || data.materias[0] || EMPTY_SUBJECT;
+  const isStudyBible = normalizeRosterName(subject.nombre) === 'estudio biblico';
   const fechasOrdenadas = useMemo(
     () => sortDatesChronologically(subject.fechas || []),
     [subject.fechas]
@@ -64,6 +113,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
   
   const [searchQuery, setSearchQuery] = useState('');
   const [pabellonFilter, setPabellonFilter] = useState('todos');
+  const [enrollmentFilter, setEnrollmentFilter] = useState<EnrollmentFilter>('inscriptos');
   const [newDateInput, setNewDateInput] = useState('');
   const [showAddDateModal, setShowAddDateModal] = useState(false);
   const [lastAction, setLastAction] = useState<{ studentId: string; date: string; prevVal: any } | null>(null);
@@ -73,6 +123,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
   // a user's manually selected older date on every realtime refresh.
   React.useEffect(() => {
     setSelectedDate(latestDateChronologically(fechasOrdenadas) || '');
+    setEnrollmentFilter('inscriptos');
   }, [subjectId]);
 
   // Extract unique pabellones in this subject
@@ -82,11 +133,33 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     return Array.from(set).sort();
   }, [subject]);
 
+  const enrollmentCounts = useMemo(() => {
+    const counts = { inscripto: 0, pendiente: 0, no_inscripto: 0, historico: 0, trabajadores: 0 };
+    subject.alumnos.forEach(alu => {
+      if (isWorkerRecord(alu, data.trabajadores || [])) counts.trabajadores++;
+      else counts[getEnrollmentStatus(alu)]++;
+    });
+    return counts;
+  }, [subject.alumnos, data.trabajadores]);
+
+  const rosterFilteredStudents = useMemo(() => {
+    if (!isStudyBible || enrollmentFilter === 'todos') return subject.alumnos;
+    const expectedStatus = enrollmentFilter === 'pendientes' ? 'pendiente'
+      : enrollmentFilter === 'no_inscriptos' ? 'no_inscripto'
+      : enrollmentFilter === 'historicos' ? 'historico'
+      : 'inscripto';
+    return subject.alumnos.filter(alu => {
+      const worker = isWorkerRecord(alu, data.trabajadores || []);
+      if (enrollmentFilter === 'inscriptos') return worker || getEnrollmentStatus(alu) === 'inscripto';
+      return !worker && getEnrollmentStatus(alu) === expectedStatus;
+    });
+  }, [subject.alumnos, data.trabajadores, isStudyBible, enrollmentFilter]);
+
   // Filter students for attendance table
   const filteredStudents = useMemo(() => {
-    return subject.alumnos.filter(alu => {
+    return rosterFilteredStudents.filter(alu => {
       const q = searchQuery.toLowerCase();
-      const matchQ = 
+      const matchQ =
         (alu.apellido && alu.apellido.toLowerCase().includes(q)) ||
         (alu.nombre && alu.nombre.toLowerCase().includes(q)) ||
         (alu.dni && alu.dni.includes(q));
@@ -95,16 +168,17 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
       if (pabellonFilter !== 'todos' && alu.pabellon !== pabellonFilter) return false;
       return true;
     }).sort((a, b) => (a.apellido || '').localeCompare(b.apellido || ''));
-  }, [subject, searchQuery, pabellonFilter]);
+  }, [rosterFilteredStudents, searchQuery, pabellonFilter]);
 
-  // Attendance stats for selected date
+  // Attendance stats follow the enrollment filter in Estudio Bíblico.
   const dateStats = useMemo(() => {
     let pres = 0;
     let aus = 0;
     let just = 0;
     let sin = 0;
+    const rows = isStudyBible ? rosterFilteredStudents : subject.alumnos;
 
-    subject.alumnos.forEach(alu => {
+    rows.forEach(alu => {
       const val = alu.asist?.[selectedDate];
       if (val === true || val === 'presente') pres++;
       else if (val === false || val === 'ausente') aus++;
@@ -112,17 +186,18 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
       else sin++;
     });
 
-    const total = subject.alumnos.length;
+    const total = rows.length;
     const marked = pres + aus + just;
     const pct = marked > 0 ? Math.round((pres / marked) * 100) : 0;
     return { pres, aus, just, sin, total, pct };
-  }, [subject, selectedDate]);
+  }, [subject.alumnos, selectedDate, isStudyBible, rosterFilteredStudents]);
 
   // Overall subject attendance pct
   const overallPct = useMemo(() => {
     let totalC = 0;
     let presC = 0;
-    subject.alumnos.forEach(alu => {
+    const rows = isStudyBible ? rosterFilteredStudents : subject.alumnos;
+    rows.forEach(alu => {
       if (alu.asist) {
         Object.entries(alu.asist).forEach(([d, val]) => {
           if (subject.fechas.includes(d) && val !== undefined && val !== '') {
@@ -133,11 +208,38 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
       }
     });
     return totalC > 0 ? Math.round((presC / totalC) * 100) : 0;
-  }, [subject]);
+  }, [subject, isStudyBible, rosterFilteredStudents]);
 
   if (!data.materias.length) {
     return <div className="p-6 text-center text-slate-500">No hay materias seleccionadas.</div>;
   }
+
+  const canMarkAttendance = (student: Student) => !isStudyBible ||
+    isWorkerRecord(student, data.trabajadores || []) || getEnrollmentStatus(student) === 'inscripto';
+
+  const renderEnrollmentControl = (student: Student) => {
+    if (!isStudyBible) return null;
+    if (isWorkerRecord(student, data.trabajadores || [])) {
+      return <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">Trabajador</span>;
+    }
+    const status = getEnrollmentStatus(student);
+    if (role !== 'admin') {
+      return <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${enrollmentStatusClasses(status, darkMode)}`}>{enrollmentStatusLabel(status)}</span>;
+    }
+    return (
+      <select
+        aria-label={`Estado de inscripción de ${student.apellido}, ${student.nombre}`}
+        value={status}
+        onChange={e => handleSetEnrollmentStatus(student, e.target.value as EnrollmentStatus)}
+        className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${enrollmentStatusClasses(status, darkMode)} ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}
+      >
+        <option value="inscripto">Inscripto</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="no_inscripto">No inscripto</option>
+        <option value="historico">Histórico</option>
+      </select>
+    );
+  };
 
   const handleSetAttendance = (studentId: string, status: boolean | string) => {
     if (role === 'espectador') {
@@ -146,6 +248,10 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     }
 
     const student = subject.alumnos.find(s => s.id === studentId);
+    if (isStudyBible && student && !canMarkAttendance(student)) {
+      showToast("Confirmá la inscripción antes de cargar asistencia.", "error");
+      return;
+    }
     const prevVal = student?.asist?.[selectedDate];
     setLastAction({ studentId, date: selectedDate, prevVal });
 
@@ -184,6 +290,24 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     showToast("Asistencia actualizada.", "success");
   };
 
+  const handleSetEnrollmentStatus = (student: Student, status: EnrollmentStatus) => {
+    if (role !== 'admin' || !isStudyBible || isWorkerRecord(student, data.trabajadores || [])) return;
+    const updatedMaterias = data.materias.map(m => {
+      if (m.id !== subject.id) return m;
+      let changed = false;
+      const updatedAlumnos = m.alumnos.map(alu => {
+        if (!changed && alu === student) {
+          changed = true;
+          return { ...alu, estado_inscripcion: status };
+        }
+        return alu;
+      });
+      return { ...m, alumnos: updatedAlumnos };
+    });
+    onUpdateData({ ...data, materias: updatedMaterias });
+    showToast(`Estado de inscripción: ${enrollmentStatusLabel(status)}.`, 'success');
+  };
+
   const handleToggleMatrixCell = (studentId: string, dateStr: string) => {
     if (role === 'espectador') {
       showToast("Modo Espectador: Sin permisos.", "error");
@@ -191,6 +315,10 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     }
 
     const student = subject.alumnos.find(s => s.id === studentId);
+    if (isStudyBible && student && !canMarkAttendance(student)) {
+      showToast("Confirmá la inscripción antes de cargar asistencia.", "error");
+      return;
+    }
     const currentVal = student?.asist?.[dateStr];
     // Toggle: undefined/false -> true (presente), true -> false (ausente), false -> undefined
     let nextVal: boolean | string = true;
@@ -244,20 +372,26 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
       return;
     }
 
+    const visibleRows = new Set(filteredStudents);
     const updatedMaterias = data.materias.map(m => {
       if (m.id !== subject.id) return m;
-      const updatedAlumnos = m.alumnos.map(alu => ({
-        ...alu,
-        asist: {
-          ...(alu.asist || {}),
-          [selectedDate]: status
-        }
-      }));
+      const updatedAlumnos = m.alumnos.map(alu => {
+        const shouldUpdate = !isStudyBible || (visibleRows.has(alu) && canMarkAttendance(alu));
+        if (!shouldUpdate) return alu;
+        return {
+          ...alu,
+          asist: {
+            ...(alu.asist || {}),
+            [selectedDate]: status
+          }
+        };
+      });
       return { ...m, alumnos: updatedAlumnos };
     });
 
     onUpdateData({ ...data, materias: updatedMaterias });
-    showToast(`Todos marcados como ${status === true || status === 'presente' ? 'Presentes' : 'Ausentes'}.`, "success");
+    const action = status === true || status === 'presente' ? 'Presentes' : 'Ausentes';
+    showToast(isStudyBible ? `Alumnos visibles marcados como ${action.toLowerCase()}.` : `Todos marcados como ${action}.`, "success");
   };
 
   const handleUndo = () => {
@@ -326,7 +460,8 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
         'APELLIDO': alu.apellido,
         'NOMBRE': alu.nombre,
         'DNI': alu.dni || '',
-        'PABELLÓN': alu.pabellon || ''
+        'PABELLÓN': alu.pabellon || '',
+        ...(isStudyBible ? { 'INSCRIPCIÓN': isWorkerRecord(alu, data.trabajadores || []) ? 'Trabajador' : enrollmentStatusLabel(getEnrollmentStatus(alu)) } : {})
       };
       fechasOrdenadas.forEach(f => {
         const val = alu.asist?.[f];
@@ -381,7 +516,11 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
               {subject.horario && (
                 <span className="flex items-center"><Clock className="w-3.5 h-3.5 mr-1" /> Horario: {subject.horario}</span>
               )}
-              <span className="flex items-center"><Users className="w-3.5 h-3.5 mr-1" /> Alumnos: {subject.alumnos.length}</span>
+              {isStudyBible ? (
+                <span className="flex items-center"><Users className="w-3.5 h-3.5 mr-1" /> Inscriptos: {enrollmentCounts.inscripto} · Por revisar: {enrollmentCounts.pendiente} · Personal (filas): {enrollmentCounts.trabajadores}</span>
+              ) : (
+                <span className="flex items-center"><Users className="w-3.5 h-3.5 mr-1" /> Alumnos: {subject.alumnos.length}</span>
+              )
               <span className="font-semibold text-emerald-600 dark:text-emerald-400">Asistencia gral: {overallPct}%</span>
             </div>
           </div>
@@ -487,13 +626,13 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                     onClick={() => handleMarkAll(true)}
                     className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition"
                   >
-                    Todos Presentes
+                    {isStudyBible ? 'Presentes visibles' : 'Todos Presentes'}
                   </button>
                   <button
                     onClick={() => handleMarkAll(false)}
                     className="px-3 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition"
                   >
-                    Todos Ausentes
+                    {isStudyBible ? 'Ausentes visibles' : 'Todos Ausentes'}
                   </button>
                 </>
               )}
@@ -528,7 +667,30 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                 {pabellones.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
+            {isStudyBible && (
+              <div className="w-full sm:w-64">
+                <select
+                  aria-label="Filtrar por estado de inscripción"
+                  value={enrollmentFilter}
+                  onChange={e => setEnrollmentFilter(e.target.value as EnrollmentFilter)}
+                  className={`w-full px-3 py-2 rounded-xl border text-sm ${
+                    darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                  }`}
+                >
+                  <option value="inscriptos">Inscriptos + personal ({enrollmentCounts.inscripto + enrollmentCounts.trabajadores})</option>
+                  <option value="pendientes">Pendientes de revisar ({enrollmentCounts.pendiente})</option>
+                  <option value="no_inscriptos">No inscriptos ({enrollmentCounts.no_inscripto})</option>
+                  <option value="historicos">Históricos ({enrollmentCounts.historico})</option>
+                  <option value="todos">Todos ({subject.alumnos.length})</option>
+                </select>
+              </div>
+            )}
           </div>
+          {isStudyBible && (
+            <div className={`px-4 py-3 rounded-xl border text-xs ${darkMode ? 'bg-slate-900/70 border-slate-700 text-slate-300' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+              Por defecto se muestran inscriptos confirmados y trabajadores. Los demás quedan separados para revisar; sus asistencias históricas se conservan.
+            </div>
+          )}
 
           {/* Attendance Table */}
           <div className={`rounded-2xl border overflow-hidden shadow-xs ${
@@ -541,6 +703,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                     darkMode ? 'bg-slate-900/80 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'
                   }`}>
                     <th className="py-3.5 px-4 font-semibold">Alumno</th>
+                    {isStudyBible && <th className="py-3.5 px-4 font-semibold">Inscripción</th>}
                     <th className="py-3.5 px-4 font-semibold">DNI</th>
                     <th className="py-3.5 px-4 font-semibold">Pabellón</th>
                     <th className="py-3.5 px-4 font-semibold text-center">Estado de Asistencia</th>
@@ -549,7 +712,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-700 text-sm">
                   {filteredStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-8 text-center text-slate-400">
+                      <td colSpan={isStudyBible ? 5 : 4} className="py-8 text-center text-slate-400">
                         No hay alumnos registrados en esta materia o que coincidan con la búsqueda.
                       </td>
                     </tr>
@@ -563,6 +726,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                       return (
                         <tr key={`${alu.id}-${alu.apellido}-${alu.nombre}-${rowIndex}`} className={`transition-colors ${darkMode ? 'hover:bg-slate-750' : 'hover:bg-slate-50'}`}>
                           <td className="py-3.5 px-4 font-bold">{alu.apellido}, {alu.nombre}</td>
+                          {isStudyBible && <td className="py-3.5 px-4 whitespace-nowrap">{renderEnrollmentControl(alu)}</td>}
                           <td className="py-3.5 px-4 font-mono text-xs">{alu.dni || '—'}</td>
                           <td className="py-3.5 px-4">
                             <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -575,7 +739,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                             <div className="flex items-center justify-center space-x-2 whitespace-nowrap">
                               {/* Presente */}
                               <button
-                                disabled={role === 'espectador'}
+                                disabled={role === 'espectador' || !canMarkAttendance(alu)}
                                 onClick={() => handleSetAttendance(alu.id, true)}
                                 className={`flex shrink-0 items-center space-x-1 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
                                   isPresent 
@@ -589,7 +753,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
 
                               {/* Ausente */}
                               <button
-                                disabled={role === 'espectador'}
+                                disabled={role === 'espectador' || !canMarkAttendance(alu)}
                                 onClick={() => handleSetAttendance(alu.id, false)}
                                 className={`flex shrink-0 items-center space-x-1 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
                                   isAbsent 
@@ -603,7 +767,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
 
                               {/* Justificado */}
                               <button
-                                disabled={role === 'espectador'}
+                                disabled={role === 'espectador' || !canMarkAttendance(alu)}
                                 onClick={() => handleSetAttendance(alu.id, 'justificado')}
                                 className={`flex shrink-0 items-center space-x-1 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
                                   isJustified 
@@ -635,9 +799,25 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
               <CheckSquare className="w-5 h-5 text-blue-600" />
               <h3 className="font-bold text-sm">Planilla de Asistencia (Matriz de Tildes por Fecha)</h3>
             </div>
-            <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              Haga click en cada celda para alternar el tilde (Presente / Ausente / Justificado)
-            </p>
+            <div className="flex items-center gap-3">
+              <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                Haga click en cada celda para alternar el tilde (Presente / Ausente / Justificado)
+              </p>
+              {isStudyBible && (
+                <select
+                  aria-label="Filtrar matriz por estado de inscripción"
+                  value={enrollmentFilter}
+                  onChange={e => setEnrollmentFilter(e.target.value as EnrollmentFilter)}
+                  className={`px-3 py-2 rounded-xl border text-xs ${darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                >
+                  <option value="inscriptos">Inscriptos + personal ({enrollmentCounts.inscripto + enrollmentCounts.trabajadores})</option>
+                  <option value="pendientes">Pendientes ({enrollmentCounts.pendiente})</option>
+                  <option value="no_inscriptos">No inscriptos ({enrollmentCounts.no_inscripto})</option>
+                  <option value="historicos">Históricos ({enrollmentCounts.historico})</option>
+                  <option value="todos">Todos ({subject.alumnos.length})</option>
+                </select>
+              )}
+            </div>
           </div>
 
           <div className="w-full max-w-full overflow-x-scroll overflow-y-auto max-h-[70vh]">
@@ -647,6 +827,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                   darkMode ? 'bg-slate-900 border-slate-700 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-600'
                 }`}>
                   <th className={`min-w-[240px] py-3 px-4 font-semibold sticky left-0 z-20 shadow-xs ${darkMode ? 'bg-slate-900' : 'bg-slate-100'}`}>Alumno</th>
+                  {isStudyBible && <th className="min-w-[150px] py-3 px-3 font-semibold">Inscripción</th>}
                   <th className="min-w-[90px] py-3 px-3 font-semibold">Pabellón</th>
                   {fechasOrdenadas.map((f, dateIndex) => (
                     <th key={`${f}-${dateIndex}`} className="min-w-[84px] py-3 px-3 font-semibold text-center whitespace-nowrap">
@@ -658,7 +839,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
               <tbody className="divide-y divide-slate-200 dark:divide-slate-700 text-sm">
                 {filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={2 + subject.fechas.length} className="py-8 text-center text-slate-400">
+                    <td colSpan={2 + (isStudyBible ? 1 : 0) + subject.fechas.length} className="py-8 text-center text-slate-400">
                       No hay alumnos inscriptos en esta materia.
                     </td>
                   </tr>
@@ -668,6 +849,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                       <td className={`min-w-[240px] py-2.5 px-4 font-bold sticky left-0 z-10 shadow-xs whitespace-nowrap ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
                         {alu.apellido}, {alu.nombre}
                       </td>
+                      {isStudyBible && <td className="min-w-[150px] py-2.5 px-3 whitespace-nowrap">{renderEnrollmentControl(alu)}</td>}
                       <td className="min-w-[90px] py-2.5 px-3 text-xs text-slate-400 whitespace-nowrap">
                         {alu.pabellon || '—'}
                       </td>
@@ -680,7 +862,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                         return (
                           <td key={`${f}-${dateIndex}`} className="min-w-[84px] py-2.5 px-3 text-center">
                             <button
-                              disabled={role === 'espectador'}
+                              disabled={role === 'espectador' || !canMarkAttendance(alu)}
                               onClick={() => handleToggleMatrixCell(alu.id, f)}
                               className={`w-8 h-8 rounded-xl font-bold text-xs inline-flex items-center justify-center transition shadow-xs ${
                                 isP 

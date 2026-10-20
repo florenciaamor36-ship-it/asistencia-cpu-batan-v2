@@ -199,7 +199,7 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
 
       let newAlumnos = [...m.alumnos];
       if (shouldBeIn && !currentlyIn) {
-        newAlumnos.push(updatedAlumnos.find(a => a.id === targetId)!);
+        newAlumnos.push({ ...updatedAlumnos.find(a => a.id === targetId)!, estado_inscripcion: 'inscripto' });
       } else if (!shouldBeIn && currentlyIn) {
         newAlumnos = newAlumnos.filter(s => s.id !== targetId);
       } else if (shouldBeIn && currentlyIn) {

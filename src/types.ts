@@ -1,4 +1,5 @@
 export type AttendanceStatus = 'presente' | 'ausente' | 'justificado' | 'sin_marcar' | true | false | '';
+export type EnrollmentStatus = 'inscripto' | 'pendiente' | 'no_inscripto' | 'historico';
 
 export interface Student {
   id: string;
@@ -11,6 +12,7 @@ export interface Student {
   asist: Record<string, boolean | string>; // date string -> status/boolean
   observaciones?: string;
   estado?: string;
+  estado_inscripcion?: EnrollmentStatus; // status within a subject roster; attendance history is preserved
   materias?: string[]; // subject IDs or names
 }
 
