@@ -520,7 +520,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                 <span className="flex items-center"><Users className="w-3.5 h-3.5 mr-1" /> Inscriptos: {enrollmentCounts.inscripto} · Por revisar: {enrollmentCounts.pendiente} · Personal (filas): {enrollmentCounts.trabajadores}</span>
               ) : (
                 <span className="flex items-center"><Users className="w-3.5 h-3.5 mr-1" /> Alumnos: {subject.alumnos.length}</span>
-              )
+              )}
               <span className="font-semibold text-emerald-600 dark:text-emerald-400">Asistencia gral: {overallPct}%</span>
             </div>
           </div>
