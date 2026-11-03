@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { latestDateChronologically, sameCalendarDate, sortDatesChronologically, todayISODate } from '../utils/dates';
-import { markWorkersPresentForNewDate } from '../utils/attendance';
+import { isSameWorkerIdentity, markWorkersPresentForNewDate } from '../utils/attendance';
 
 const EMPTY_SUBJECT: Subject = { id: '', nombre: '', dias: [], horario: '', fechas: [], alumnos: [] };
 
@@ -50,14 +50,7 @@ const normalizePerson = (value: unknown) => String(value ?? '')
   .toLowerCase()
   .replace(/[^a-z0-9]/g, '');
 
-const isWorkerRecord = (student: Student, workers: AppData['trabajadores']) => workers.some(worker => {
-  const studentDni = normalizePerson(student.dni);
-  const workerDni = normalizePerson(worker.dni);
-  if (studentDni && workerDni && studentDni === workerDni) return true;
-  const studentName = `${normalizePerson(student.apellido)}${normalizePerson(student.nombre)}`;
-  const workerName = `${normalizePerson(worker.apellido)}${normalizePerson(worker.nombre)}`;
-  return Boolean(studentName && workerName && studentName === workerName);
-});
+const isWorkerRecord = (student: Student, workers: AppData['trabajadores']) => workers.some(worker => isSameWorkerIdentity(student, worker));
 
 const getEnrollmentStatus = (student: Student): EnrollmentStatus => {
   switch (student.estado_inscripcion) {
@@ -247,7 +240,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     );
   };
 
-  const handleSetAttendance = (studentId: string, status: boolean | string) => {
+  const handleSetAttendance = (studentId: string, status: boolean | string | undefined, actionDate = selectedDate) => {
     if (role === 'espectador') {
       showToast("Modo Espectador: No tiene permisos para modificar la asistencia.", "error");
       return;
@@ -258,8 +251,8 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
       showToast("Confirmá la inscripción antes de cargar asistencia.", "error");
       return;
     }
-    const prevVal = student?.asist?.[selectedDate];
-    setLastAction({ studentId, date: selectedDate, prevVal });
+    const prevVal = student?.asist?.[actionDate];
+    setLastAction({ studentId, date: actionDate, prevVal });
 
     const updatedMaterias = data.materias.map(m => {
       if (m.id !== subject.id) return m;
@@ -267,10 +260,12 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
         if (alu.id !== studentId) return alu;
         return {
           ...alu,
-          asist: {
-            ...(alu.asist || {}),
-            [selectedDate]: status
-          }
+          asist: (() => {
+            const next = { ...(alu.asist || {}) };
+            if (status === undefined || status === '') delete next[actionDate];
+            else next[actionDate] = status;
+            return next;
+          })()
         };
       });
       return { ...m, alumnos: updatedAlumnos };
@@ -281,10 +276,12 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
       if (alu.id !== studentId) return alu;
       return {
         ...alu,
-        asist: {
-          ...(alu.asist || {}),
-          [selectedDate]: status
-        }
+        asist: (() => {
+          const next = { ...(alu.asist || {}) };
+          if (status === undefined || status === '') delete next[actionDate];
+          else next[actionDate] = status;
+          return next;
+        })()
       };
     });
 
@@ -386,10 +383,12 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
         if (!shouldUpdate) return alu;
         return {
           ...alu,
-          asist: {
-            ...(alu.asist || {}),
-            [selectedDate]: status
-          }
+          asist: (() => {
+            const next = { ...(alu.asist || {}) };
+            if (status === undefined || status === '') delete next[selectedDate];
+            else next[selectedDate] = status;
+            return next;
+          })()
         };
       });
       return { ...m, alumnos: updatedAlumnos };
@@ -402,7 +401,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
 
   const handleUndo = () => {
     if (!lastAction) return;
-    handleSetAttendance(lastAction.studentId, lastAction.prevVal);
+    handleSetAttendance(lastAction.studentId, lastAction.prevVal, lastAction.date);
     setLastAction(null);
     showToast("Cambio deshecho.", "info");
   };

@@ -15,6 +15,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { createStudentEnrollment, isActiveEnrollment, mergeStudentDemographicsIntoRosterRow } from '../utils/attendance';
 
 interface MatriculaViewProps {
   data: AppData;
@@ -79,7 +80,7 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
       if (pabellonFilter !== 'todos' && alu.pabellon !== pabellonFilter) return false;
 
       if (materiaFilter !== 'todas') {
-        const isInMat = data.materias.some(m => m.id === materiaFilter && m.alumnos.some(s => s.id === alu.id));
+        const isInMat = data.materias.some(m => m.id === materiaFilter && m.alumnos.some(s => s.id === alu.id && isActiveEnrollment(s)));
         if (!isInMat) return false;
       }
 
@@ -146,7 +147,7 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
 
   const handleOpenEdit = (student: Student) => {
     setEditingStudent(student);
-    const studentSubjects = data.materias.filter(m => m.alumnos.some(s => s.id === student.id)).map(m => m.id);
+    const studentSubjects = data.materias.filter(m => m.alumnos.some(s => s.id === student.id && isActiveEnrollment(s))).map(m => m.id);
     setFormData({
       apellido: student.apellido || '',
       nombre: student.nombre || '',
@@ -195,15 +196,18 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
     // Update materias enrollment based on selectedMaterias
     const updatedMaterias = data.materias.map(m => {
       const shouldBeIn = formData.selectedMaterias.includes(m.id);
-      const currentlyIn = m.alumnos.some(s => s.id === targetId);
+      const currentRow = m.alumnos.find(s => s.id === targetId);
+      const currentlyIn = Boolean(currentRow && isActiveEnrollment(currentRow));
 
       let newAlumnos = [...m.alumnos];
-      if (shouldBeIn && !currentlyIn) {
-        newAlumnos.push({ ...updatedAlumnos.find(a => a.id === targetId)!, estado_inscripcion: 'inscripto' });
+      if (shouldBeIn && !currentlyIn && currentRow) {
+        newAlumnos = newAlumnos.map(s => s.id === targetId ? { ...s, estado_inscripcion: 'inscripto' } : s);
+      } else if (shouldBeIn && !currentlyIn) {
+        newAlumnos.push(createStudentEnrollment(updatedAlumnos.find(a => a.id === targetId)!));
       } else if (!shouldBeIn && currentlyIn) {
-        newAlumnos = newAlumnos.filter(s => s.id !== targetId);
+        newAlumnos = newAlumnos.map(s => s.id === targetId ? { ...s, estado_inscripcion: 'no_inscripto' } : s);
       } else if (shouldBeIn && currentlyIn) {
-        newAlumnos = newAlumnos.map(s => s.id === targetId ? { ...s, ...studentData } : s);
+        newAlumnos = newAlumnos.map(s => s.id === targetId ? mergeStudentDemographicsIntoRosterRow(s, studentData) : s);
       }
       return { ...m, alumnos: newAlumnos };
     });

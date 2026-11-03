@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { AppData, Subject, Student } from '../types';
 import { BookOpen, Plus, Edit, Trash2, Users, Check, X, Calendar, Clock } from 'lucide-react';
 import { sortDatesChronologically, todayISODate } from '../utils/dates';
-import { createInitialSubjectRoster } from '../utils/attendance';
+import { createInitialSubjectRoster, createStudentEnrollment, isActiveEnrollment } from '../utils/attendance';
 
 interface MateriasViewProps {
   data: AppData;
@@ -117,18 +117,19 @@ export const MateriasView: React.FC<MateriasViewProps> = ({
   const handleToggleStudentInSubject = (studentId: string) => {
     if (!managingSubject) return;
 
-    const isEnrolled = managingSubject.alumnos.some(s => s.id === studentId);
+    const existingRow = managingSubject.alumnos.find(s => s.id === studentId);
+    const isEnrolled = Boolean(existingRow && isActiveEnrollment(existingRow));
     let updatedSubjectAlumnos: Student[];
 
     if (isEnrolled) {
-      updatedSubjectAlumnos = managingSubject.alumnos.filter(s => s.id !== studentId);
+      updatedSubjectAlumnos = managingSubject.alumnos.map(s => s.id === studentId ? { ...s, estado_inscripcion: 'no_inscripto' } : s);
+    } else if (existingRow) {
+      updatedSubjectAlumnos = managingSubject.alumnos.map(s => s.id === studentId ? { ...s, estado_inscripcion: 'inscripto' } : s);
     } else {
       const studentObj = data.alumnos.find(s => s.id === studentId);
-      if (studentObj) {
-        updatedSubjectAlumnos = [...managingSubject.alumnos, { ...studentObj, estado_inscripcion: 'inscripto' }];
-      } else {
-        updatedSubjectAlumnos = managingSubject.alumnos;
-      }
+      updatedSubjectAlumnos = studentObj
+        ? [...managingSubject.alumnos, createStudentEnrollment(studentObj)]
+        : managingSubject.alumnos;
     }
 
     const updatedMaterias = data.materias.map(m => {
@@ -210,7 +211,7 @@ export const MateriasView: React.FC<MateriasViewProps> = ({
               </div>
               <div className="flex items-center space-x-2">
                 <Users className="w-4 h-4" />
-                <span className="font-bold text-blue-600 dark:text-blue-400">{m.alumnos.length} alumnos inscriptos</span>
+                <span className="font-bold text-blue-600 dark:text-blue-400">{m.alumnos.filter(isActiveEnrollment).length} alumnos inscriptos</span>
               </div>
             </div>
 
@@ -323,7 +324,8 @@ export const MateriasView: React.FC<MateriasViewProps> = ({
 
             <div className="flex-1 overflow-y-auto space-y-2 pr-1">
               {data.alumnos.map(alu => {
-                const isEnrolled = managingSubject.alumnos.some(s => s.id === alu.id);
+                const existingRow = managingSubject.alumnos.find(s => s.id === alu.id);
+                const isEnrolled = Boolean(existingRow && isActiveEnrollment(existingRow));
                 return (
                   <div
                     key={alu.id}

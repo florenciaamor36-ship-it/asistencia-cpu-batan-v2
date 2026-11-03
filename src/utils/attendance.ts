@@ -6,10 +6,10 @@ const normalizePerson = (value: unknown): string => String(value ?? '')
   .toLowerCase()
   .replace(/[^a-z0-9]/g, '');
 
-function isSamePerson(student: Student, worker: Worker): boolean {
+export function isSameWorkerIdentity(student: Student, worker: Worker): boolean {
   const studentDni = normalizePerson(student.dni);
   const workerDni = normalizePerson(worker.dni);
-  if (studentDni && workerDni && studentDni === workerDni) return true;
+  if (studentDni && workerDni) return studentDni === workerDni;
 
   const studentName = `${normalizePerson(student.apellido)}${normalizePerson(student.nombre)}`;
   const workerName = `${normalizePerson(worker.apellido)}${normalizePerson(worker.nombre)}`;
@@ -26,12 +26,12 @@ export function markWorkersPresentForNewDate(
   date: string
 ): Student[] {
   const result = students.map(student => {
-    if (!workers.some(worker => isSamePerson(student, worker))) return student;
+    if (!workers.some(worker => isSameWorkerIdentity(student, worker))) return student;
     return { ...student, asist: { ...(student.asist || {}), [date]: true } };
   });
 
   const missingWorkers = workers
-    .filter(worker => !result.some(student => isSamePerson(student, worker)))
+    .filter(worker => !result.some(student => isSameWorkerIdentity(student, worker)))
     .map(worker => ({
       id: worker.id,
       apellido: worker.apellido,
@@ -65,4 +65,30 @@ export function markWorkersPresentForAllDates(
 /** A new subject starts with workers only; students enroll explicitly. */
 export function createInitialSubjectRoster(workers: Worker[], date: string): Student[] {
   return markWorkersPresentForNewDate([], workers, date);
+}
+
+
+/**
+ * Apply current registry demographics to a subject roster row without replacing
+ * that subject's independently tracked attendance or enrollment state.
+ */
+export function mergeStudentDemographicsIntoRosterRow(row: Student, student: Student): Student {
+  return {
+    ...row,
+    ...student,
+    id: row.id,
+    asist: row.asist || {},
+    estado_inscripcion: row.estado_inscripcion
+  };
+}
+
+/** Start an enrollment with no inherited, date-keyed attendance from another context. */
+export function createStudentEnrollment(student: Student): Student {
+  return { ...student, asist: {}, estado_inscripcion: 'inscripto' };
+}
+
+
+/** True unless a roster row was explicitly withdrawn or archived. Legacy rows remain active. */
+export function isActiveEnrollment(student: Student): boolean {
+  return student.estado_inscripcion !== 'no_inscripto' && student.estado_inscripcion !== 'historico';
 }
