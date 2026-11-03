@@ -24,10 +24,28 @@ function dateTimestamp(value: string): number | null {
   return parsed.getTime();
 }
 
+/** Canonical day-only key shared by ISO, ISO timestamps and legacy DD/MM/YYYY keys. */
+export function canonicalCalendarDate(value: string): string | null {
+  const timestamp = dateTimestamp(value);
+  if (timestamp === null) return null;
+  const date = new Date(timestamp);
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+}
+
 export function sameCalendarDate(a: string, b: string): boolean {
   const timestampA = dateTimestamp(a);
   const timestampB = dateTimestamp(b);
   return timestampA !== null && timestampA === timestampB;
+}
+
+/** Read legacy and current attendance keys equivalently without rewriting stored data. */
+export function attendanceValueForDate<T>(attendance: Record<string, T> | undefined, date: string): T | undefined {
+  if (!attendance) return undefined;
+  if (Object.prototype.hasOwnProperty.call(attendance, date)) return attendance[date];
+  const canonical = canonicalCalendarDate(date);
+  if (!canonical) return undefined;
+  const matchingKey = Object.keys(attendance).find(key => canonicalCalendarDate(key) === canonical);
+  return matchingKey === undefined ? undefined : attendance[matchingKey];
 }
 
 export function sortDatesChronologically(values: string[]): string[] {

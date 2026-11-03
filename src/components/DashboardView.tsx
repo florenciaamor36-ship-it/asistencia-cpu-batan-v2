@@ -2,6 +2,7 @@ import React from 'react';
 import { AppData, ViewMode } from '../types';
 import { Users, BookOpen, Briefcase, CalendarCheck, TrendingUp, ArrowRight, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { todayISODate } from '../utils/dates';
+import { summarizeAttendance } from '../utils/attendance';
 
 interface DashboardViewProps {
   data: AppData;
@@ -20,26 +21,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const totalMaterias = data.materias.length;
   const totalTrabajadores = data.trabajadores.length;
 
-  // Calculate overall attendance rate
-  let totalRecords = 0;
-  let presentRecords = 0;
-
-  data.materias.forEach(m => {
-    m.alumnos.forEach(a => {
-      if (a.asist) {
-        Object.values(a.asist).forEach(val => {
-          if (val !== undefined && val !== '') {
-            totalRecords++;
-            if (val === true || val === 'presente') {
-              presentRecords++;
-            }
-          }
-        });
-      }
-    });
-  });
-
-  const avgAttendance = totalRecords > 0 ? Math.round((presentRecords / totalRecords) * 100) : 0;
+  // Same eligible rows, legacy-date lookup, and denominator as the attendance screens.
+  const attendanceTotals = data.materias.reduce((all, subject) => {
+    const current = summarizeAttendance(subject, data.trabajadores || []);
+    all.presentes += current.presentes;
+    all.posibles += current.posibles;
+    return all;
+  }, { presentes: 0, posibles: 0 });
+  const avgAttendance = attendanceTotals.posibles > 0
+    ? Math.round(attendanceTotals.presentes / attendanceTotals.posibles * 100)
+    : 0;
 
   // Carnet status counts
   const today = todayISODate();

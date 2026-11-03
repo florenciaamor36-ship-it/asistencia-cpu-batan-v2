@@ -15,7 +15,6 @@ import {
   UserCheck
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { archiveStudentRecord, createStudentEnrollment, isActiveEnrollment, isActiveStudent, mergeStudentDemographicsIntoRosterRow } from '../utils/attendance';
 
 interface MatriculaViewProps {
   data: AppData;
@@ -68,7 +67,6 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
     const today = new Date().toISOString().split('T')[0];
 
     return data.alumnos.filter(alu => {
-      if (!isActiveStudent(alu)) return false;
       const query = searchQuery.toLowerCase();
       const matchQuery = 
         (alu.apellido && alu.apellido.toLowerCase().includes(query)) ||
@@ -81,7 +79,7 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
       if (pabellonFilter !== 'todos' && alu.pabellon !== pabellonFilter) return false;
 
       if (materiaFilter !== 'todas') {
-        const isInMat = data.materias.some(m => m.id === materiaFilter && m.alumnos.some(s => s.id === alu.id && isActiveEnrollment(s)));
+        const isInMat = data.materias.some(m => m.id === materiaFilter && m.alumnos.some(s => s.id === alu.id));
         if (!isInMat) return false;
       }
 
@@ -148,7 +146,7 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
 
   const handleOpenEdit = (student: Student) => {
     setEditingStudent(student);
-    const studentSubjects = data.materias.filter(m => m.alumnos.some(s => s.id === student.id && isActiveEnrollment(s))).map(m => m.id);
+    const studentSubjects = data.materias.filter(m => m.alumnos.some(s => s.id === student.id)).map(m => m.id);
     setFormData({
       apellido: student.apellido || '',
       nombre: student.nombre || '',
@@ -197,18 +195,15 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
     // Update materias enrollment based on selectedMaterias
     const updatedMaterias = data.materias.map(m => {
       const shouldBeIn = formData.selectedMaterias.includes(m.id);
-      const currentRow = m.alumnos.find(s => s.id === targetId);
-      const currentlyIn = Boolean(currentRow && isActiveEnrollment(currentRow));
+      const currentlyIn = m.alumnos.some(s => s.id === targetId);
 
       let newAlumnos = [...m.alumnos];
-      if (shouldBeIn && !currentlyIn && currentRow) {
-        newAlumnos = newAlumnos.map(s => s.id === targetId ? { ...s, estado_inscripcion: 'inscripto' } : s);
-      } else if (shouldBeIn && !currentlyIn) {
-        newAlumnos.push(createStudentEnrollment(updatedAlumnos.find(a => a.id === targetId)!));
+      if (shouldBeIn && !currentlyIn) {
+        newAlumnos.push({ ...updatedAlumnos.find(a => a.id === targetId)!, estado_inscripcion: 'inscripto' });
       } else if (!shouldBeIn && currentlyIn) {
-        newAlumnos = newAlumnos.map(s => s.id === targetId ? { ...s, estado_inscripcion: 'no_inscripto' } : s);
+        newAlumnos = newAlumnos.filter(s => s.id !== targetId);
       } else if (shouldBeIn && currentlyIn) {
-        newAlumnos = newAlumnos.map(s => s.id === targetId ? mergeStudentDemographicsIntoRosterRow(s, studentData) : s);
+        newAlumnos = newAlumnos.map(s => s.id === targetId ? { ...s, ...studentData } : s);
       }
       return { ...m, alumnos: newAlumnos };
     });
@@ -226,8 +221,18 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
       return;
     }
 
-    onUpdateData(archiveStudentRecord(data, studentId));
-    showToast("Alumno archivado; se conservaron sus asistencias e historial.", "info");
+    const updatedAlumnos = data.alumnos.filter(a => a.id !== studentId);
+    const updatedMaterias = data.materias.map(m => ({
+      ...m,
+      alumnos: m.alumnos.filter(s => s.id !== studentId)
+    }));
+
+    onUpdateData({
+      ...data,
+      alumnos: updatedAlumnos,
+      materias: updatedMaterias
+    });
+    showToast("Alumno eliminado correctamente.", "info");
   };
 
   const handleExportExcel = () => {

@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 import { AppData } from '../types';
+import { attendanceValueForDate } from '../utils/dates';
+import { isAttendanceEligibleStudent, summarizeAttendance } from '../utils/attendance';
 import { 
   BarChart, 
   Bar, 
@@ -19,52 +21,29 @@ interface EstadisticasViewProps {
 
 export const EstadisticasView: React.FC<EstadisticasViewProps> = ({ data, darkMode }) => {
   // Compute overall stats
-  const { totalPresentes, totalAusentes, totalJustificados, totalSinMarcar, subjectChartData } = useMemo(() => {
+  const { totalPresentes, totalAusentes, totalJustificados, totalSinMarcar, totalPosibles, subjectChartData } = useMemo(() => {
     let pres = 0;
     let aus = 0;
     let just = 0;
     let sin = 0;
+    let posibles = 0;
 
     const chartData = data.materias.map(m => {
-      let mPres = 0;
-      let mTotal = 0;
-      m.alumnos.forEach(alu => {
-        if (alu.asist) {
-          Object.entries(alu.asist).forEach(([d, val]) => {
-            if (m.fechas.includes(d) && val !== undefined && val !== '') {
-              mTotal++;
-              if (val === true || val === 'presente') {
-                mPres++;
-                pres++;
-              } else if (val === false || val === 'ausente') {
-                aus++;
-              } else if (val === 'justificado') {
-                just++;
-                mPres++; // count justified towards attendance or separate
-              } else {
-                sin++;
-              }
-            }
-          });
-        }
-      });
-
-      const pct = mTotal > 0 ? Math.round((mPres / mTotal) * 100) : 0;
+      const summary = summarizeAttendance(m, data.trabajadores || []);
+      pres += summary.presentes;
+      aus += summary.ausentes;
+      just += summary.justificados;
+      sin += summary.sinMarcar;
+      posibles += summary.posibles;
       return {
         name: m.nombre.length > 22 ? m.nombre.substring(0, 20) + '...' : m.nombre,
         fullName: m.nombre,
-        asistencia: pct,
-        alumnos: m.alumnos.length
+        asistencia: summary.porcentaje,
+        alumnos: m.alumnos.filter(a => isAttendanceEligibleStudent(m, a, data.trabajadores || [])).length
       };
     });
 
-    return {
-      totalPresentes: pres,
-      totalAusentes: aus,
-      totalJustificados: just,
-      totalSinMarcar: sin,
-      subjectChartData: chartData
-    };
+    return { totalPresentes: pres, totalAusentes: aus, totalJustificados: just, totalSinMarcar: sin, totalPosibles: posibles, subjectChartData: chartData };
   }, [data]);
 
   // Students attendance rates
@@ -73,14 +52,12 @@ export const EstadisticasView: React.FC<EstadisticasViewProps> = ({ data, darkMo
       let total = 0;
       let present = 0;
       data.materias.forEach(m => {
-        if (m.alumnos.some(s => s.id === alu.id)) {
+        const studentInMat = m.alumnos.find(s => s.id === alu.id);
+        if (studentInMat && isAttendanceEligibleStudent(m, studentInMat, data.trabajadores || [])) {
           m.fechas.forEach(f => {
-            const studentInMat = m.alumnos.find(s => s.id === alu.id);
-            const val = studentInMat?.asist?.[f];
-            if (val !== undefined && val !== '') {
-              total++;
-              if (val === true || val === 'presente' || val === 'justificado') present++;
-            }
+            total++;
+            const val = attendanceValueForDate(studentInMat.asist, f);
+            if (val === true || val === 'presente') present++;
           });
         }
       });
@@ -104,7 +81,7 @@ export const EstadisticasView: React.FC<EstadisticasViewProps> = ({ data, darkMo
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className={cardClass}>
           <p className={`text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Total Presentes</p>
           <p className="text-3xl font-bold mt-1 text-emerald-600 dark:text-emerald-400">{totalPresentes}</p>
@@ -121,9 +98,14 @@ export const EstadisticasView: React.FC<EstadisticasViewProps> = ({ data, darkMo
           <span className="text-xs text-slate-400 mt-2 block">Ausencias con aviso</span>
         </div>
         <div className={cardClass}>
-          <p className={`text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Alumnos Evaluados</p>
-          <p className="text-3xl font-bold mt-1 text-blue-600 dark:text-blue-400">{data.alumnos.length}</p>
-          <span className="text-xs text-slate-400 mt-2 block">Padrón total activo</span>
+          <p className={`text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Sin marcar</p>
+          <p className="text-3xl font-bold mt-1 text-slate-500">{totalSinMarcar}</p>
+          <span className="text-xs text-slate-400 mt-2 block">Oportunidades sin registro</span>
+        </div>
+        <div className={cardClass}>
+          <p className={`text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Denominador</p>
+          <p className="text-3xl font-bold mt-1 text-blue-600 dark:text-blue-400">{totalPosibles}</p>
+          <span className="text-xs text-slate-400 mt-2 block">Inscripción elegible × clases</span>
         </div>
       </div>
 

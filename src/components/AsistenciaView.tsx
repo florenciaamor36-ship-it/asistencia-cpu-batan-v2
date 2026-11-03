@@ -21,7 +21,7 @@ import {
   ListChecks
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { latestDateChronologically, sameCalendarDate, sortDatesChronologically, todayISODate } from '../utils/dates';
+import { attendanceValueForDate, latestDateChronologically, sameCalendarDate, sortDatesChronologically, todayISODate } from '../utils/dates';
 import { isSameWorkerIdentity, markWorkersPresentForNewDate } from '../utils/attendance';
 
 const EMPTY_SUBJECT: Subject = { id: '', nombre: '', dias: [], horario: '', fechas: [], alumnos: [] };
@@ -178,7 +178,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     const rows = attendanceEligibleRows;
 
     rows.forEach(alu => {
-      const val = alu.asist?.[selectedDate];
+      const val = attendanceValueForDate(alu.asist, selectedDate);
       if (val === true || val === 'presente') pres++;
       else if (val === false || val === 'ausente') aus++;
       else if (val === 'justificado') just++;
@@ -186,28 +186,13 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     });
 
     const total = rows.length;
-    const marked = pres + aus + just;
-    const pct = marked > 0 ? Math.round((pres / marked) * 100) : 0;
+    const pct = total > 0 ? Math.round((pres / total) * 100) : 0;
     return { pres, aus, just, sin, total, pct };
   }, [attendanceEligibleRows, selectedDate]);
 
   // Overall subject attendance pct
-  const overallPct = useMemo(() => {
-    let totalC = 0;
-    let presC = 0;
-    const rows = attendanceEligibleRows;
-    rows.forEach(alu => {
-      if (alu.asist) {
-        Object.entries(alu.asist).forEach(([d, val]) => {
-          if (subject.fechas.includes(d) && val !== undefined && val !== '') {
-            totalC++;
-            if (val === true || val === 'presente') presC++;
-          }
-        });
-      }
-    });
-    return totalC > 0 ? Math.round((presC / totalC) * 100) : 0;
-  }, [subject, attendanceEligibleRows]);
+  const overallPct = useMemo(() => summarizeAttendance(subject, data.trabajadores || []).porcentaje,
+    [subject, data.trabajadores]);
 
   if (!data.materias.length) {
     return <div className="p-6 text-center text-slate-500">No hay materias seleccionadas.</div>;
@@ -469,7 +454,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
         ...(isStudyBible ? { 'INSCRIPCIÓN': isWorkerRecord(alu, data.trabajadores || []) ? 'Trabajador' : enrollmentStatusLabel(getEnrollmentStatus(alu)) } : {})
       };
       fechasOrdenadas.forEach(f => {
-        const val = alu.asist?.[f];
+        const val = attendanceValueForDate(alu.asist, f);
         row[f] = val === true || val === 'presente' ? 'Presente' : val === false || val === 'ausente' ? 'Ausente' : val === 'justificado' ? 'Justificado' : 'Sin marcar';
       });
       return row;
@@ -723,7 +708,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                     </tr>
                   ) : (
                     filteredStudents.map((alu, rowIndex) => {
-                      const status = alu.asist?.[selectedDate];
+                      const status = attendanceValueForDate(alu.asist, selectedDate);
                       const isPresent = status === true || status === 'presente';
                       const isAbsent = status === false || status === 'ausente';
                       const isJustified = status === 'justificado';
@@ -859,7 +844,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                         {alu.pabellon || '—'}
                       </td>
                       {fechasOrdenadas.map((f, dateIndex) => {
-                        const val = alu.asist?.[f];
+                        const val = attendanceValueForDate(alu.asist, f);
                         const isP = val === true || val === 'presente';
                         const isA = val === false || val === 'ausente';
                         const isJ = val === 'justificado';
