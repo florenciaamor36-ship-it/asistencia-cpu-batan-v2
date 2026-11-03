@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { attendanceValueForDate, latestDateChronologically, sameCalendarDate, sortDatesChronologically, todayISODate } from '../utils/dates';
-import { isSameWorkerIdentity, markWorkersPresentForNewDate } from '../utils/attendance';
+import { isSameWorkerIdentity, markWorkersPresentForNewDate, summarizeAttendance } from '../utils/attendance';
 
 const EMPTY_SUBJECT: Subject = { id: '', nombre: '', dias: [], horario: '', fechas: [], alumnos: [] };
 
