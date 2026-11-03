@@ -1,5 +1,6 @@
 import { AppData, Student } from '../types';
 import { sortDatesChronologically } from '../utils/dates';
+import { isActiveStudent } from '../utils/attendance';
 
 const LOCAL_STORAGE_KEY = 'cpu_batan_asistencia_data_v1';
 const ROLE_KEY = 'cpu_batan_user_role';
@@ -88,8 +89,9 @@ export const StorageService = {
 
   findDuplicates(alumnos: Student[]): Array<{ student: Student; duplicateOf: Student; reason: string }> {
     const results: Array<{ student: Student; duplicateOf: Student; reason: string }> = [];
-    for (let i = 0; i < alumnos.length; i++) for (let j = i + 1; j < alumnos.length; j++) {
-      const a = alumnos[i], b = alumnos[j];
+    const activeAlumnos = alumnos.filter(isActiveStudent);
+    for (let i = 0; i < activeAlumnos.length; i++) for (let j = i + 1; j < activeAlumnos.length; j++) {
+      const a = activeAlumnos[i], b = activeAlumnos[j];
       if (a.dni && b.dni && a.dni.trim() && a.dni.trim() === b.dni.trim()) results.push({ student: b, duplicateOf: a, reason: `DNI idéntico: ${a.dni}` });
       else if (`${a.apellido} ${a.nombre}`.trim().toLowerCase() === `${b.apellido} ${b.nombre}`.trim().toLowerCase()) results.push({ student: b, duplicateOf: a, reason: `Nombre y apellido idénticos: ${a.apellido}, ${a.nombre}` });
     }

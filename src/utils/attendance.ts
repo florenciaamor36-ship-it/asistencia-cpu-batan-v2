@@ -1,4 +1,4 @@
-import { Student, Worker } from '../types';
+import { AppData, Student, Worker } from '../types';
 
 const normalizePerson = (value: unknown): string => String(value ?? '')
   .normalize('NFD')
@@ -7,6 +7,8 @@ const normalizePerson = (value: unknown): string => String(value ?? '')
   .replace(/[^a-z0-9]/g, '');
 
 export function isSameWorkerIdentity(student: Student, worker: Worker): boolean {
+  // Auto-created roster snapshots use the worker's stable ID; retain identity across name/DNI edits.
+  if (student.id && worker.id && student.id === worker.id) return true;
   const studentDni = normalizePerson(student.dni);
   const workerDni = normalizePerson(worker.dni);
   if (studentDni && workerDni) return studentDni === workerDni;
@@ -91,4 +93,23 @@ export function createStudentEnrollment(student: Student): Student {
 /** True unless a roster row was explicitly withdrawn or archived. Legacy rows remain active. */
 export function isActiveEnrollment(student: Student): boolean {
   return student.estado_inscripcion !== 'no_inscripto' && student.estado_inscripcion !== 'historico';
+}
+
+
+/** Archive a registry entry without deleting its demographics or subject attendance history. */
+export function archiveStudentRecord(data: AppData, studentId: string): AppData {
+  return {
+    ...data,
+    alumnos: data.alumnos.map(student => student.id === studentId ? { ...student, estado: 'inactivo' } : student),
+    materias: data.materias.map(subject => ({
+      ...subject,
+      alumnos: subject.alumnos.map(student => student.id === studentId
+        ? { ...student, estado_inscripcion: 'historico' }
+        : student)
+    }))
+  };
+}
+
+export function isActiveStudent(student: Student): boolean {
+  return student.estado !== 'inactivo';
 }

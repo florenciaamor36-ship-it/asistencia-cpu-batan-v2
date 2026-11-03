@@ -2,6 +2,7 @@ import React from 'react';
 import { AppData, Student } from '../types';
 import { AlertTriangle, X, CheckCircle2 } from 'lucide-react';
 import { StorageService } from '../services/storage';
+import { archiveStudentRecord } from '../utils/attendance';
 
 interface DuplicateModalProps {
   data: AppData;
@@ -23,18 +24,8 @@ export const DuplicateModal: React.FC<DuplicateModalProps> = ({
   const handleRemoveDuplicate = (duplicateId: string) => {
     if (!window.confirm("¿Confirma que desea eliminar este registro duplicado?")) return;
 
-    const updatedAlumnos = data.alumnos.filter(a => a.id !== duplicateId);
-    const updatedMaterias = data.materias.map(m => ({
-      ...m,
-      alumnos: m.alumnos.filter(s => s.id !== duplicateId)
-    }));
-
-    onUpdateData({
-      ...data,
-      alumnos: updatedAlumnos,
-      materias: updatedMaterias
-    });
-    showToast("Registro duplicado eliminado.", "success");
+    onUpdateData(archiveStudentRecord(data, duplicateId));
+    showToast("Registro duplicado archivado; se conservó su historial.", "info");
   };
 
   return (
@@ -94,7 +85,7 @@ export const DuplicateModal: React.FC<DuplicateModalProps> = ({
                     onClick={() => handleRemoveDuplicate(item.student.id)}
                     className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition"
                   >
-                    Eliminar este duplicado
+                    Archivar este duplicado
                   </button>
                 </div>
               </div>

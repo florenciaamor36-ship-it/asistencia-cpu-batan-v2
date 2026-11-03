@@ -15,7 +15,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { createStudentEnrollment, isActiveEnrollment, mergeStudentDemographicsIntoRosterRow } from '../utils/attendance';
+import { archiveStudentRecord, createStudentEnrollment, isActiveEnrollment, isActiveStudent, mergeStudentDemographicsIntoRosterRow } from '../utils/attendance';
 
 interface MatriculaViewProps {
   data: AppData;
@@ -68,6 +68,7 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
     const today = new Date().toISOString().split('T')[0];
 
     return data.alumnos.filter(alu => {
+      if (!isActiveStudent(alu)) return false;
       const query = searchQuery.toLowerCase();
       const matchQuery = 
         (alu.apellido && alu.apellido.toLowerCase().includes(query)) ||
@@ -225,18 +226,8 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
       return;
     }
 
-    const updatedAlumnos = data.alumnos.filter(a => a.id !== studentId);
-    const updatedMaterias = data.materias.map(m => ({
-      ...m,
-      alumnos: m.alumnos.filter(s => s.id !== studentId)
-    }));
-
-    onUpdateData({
-      ...data,
-      alumnos: updatedAlumnos,
-      materias: updatedMaterias
-    });
-    showToast("Alumno eliminado correctamente.", "info");
+    onUpdateData(archiveStudentRecord(data, studentId));
+    showToast("Alumno archivado; se conservaron sus asistencias e historial.", "info");
   };
 
   const handleExportExcel = () => {
