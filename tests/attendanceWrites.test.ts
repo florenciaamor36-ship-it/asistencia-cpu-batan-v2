@@ -23,7 +23,10 @@ describe('attendance editing regression cases (isolated fixtures)', () => {
 
   it('reads old date formats and writes a single canonical key without touching other dates', () => {
     const previous = { '03/11/2026': 'ausente', '2026-11-03': true, '2026-11-04': false };
-    assert.equal(attendanceValueForDate(previous, '2026-11-03'), 'ausente');
+    // Exact canonical keys take precedence over legacy aliases when data is inconsistent.
+    assert.equal(attendanceValueForDate(previous, '2026-11-03'), true);
+    // Legacy formats remain readable when no exact key exists.
+    assert.equal(attendanceValueForDate({ '03/11/2026': 'ausente' }, '2026-11-03'), 'ausente');
     const updated = setAttendanceForDate(previous, '2026-11-03', 'justificado');
     assert.deepEqual(updated, { '2026-11-04': false, '2026-11-03': 'justificado' });
     assert.deepEqual(previous, { '03/11/2026': 'ausente', '2026-11-03': true, '2026-11-04': false });
