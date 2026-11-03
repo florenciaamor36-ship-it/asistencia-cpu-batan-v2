@@ -113,7 +113,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
   
   const [searchQuery, setSearchQuery] = useState('');
   const [pabellonFilter, setPabellonFilter] = useState('todos');
-  const [enrollmentFilter, setEnrollmentFilter] = useState<EnrollmentFilter>('inscriptos');
+  const [enrollmentFilter, setEnrollmentFilter] = useState<EnrollmentFilter>('todos');
   const [newDateInput, setNewDateInput] = useState('');
   const [showAddDateModal, setShowAddDateModal] = useState(false);
   const [lastAction, setLastAction] = useState<{ studentId: string; date: string; prevVal: any } | null>(null);
@@ -123,7 +123,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
   // a user's manually selected older date on every realtime refresh.
   React.useEffect(() => {
     setSelectedDate(latestDateChronologically(fechasOrdenadas) || '');
-    setEnrollmentFilter('inscriptos');
+    setEnrollmentFilter('todos');
   }, [subjectId]);
 
   // Extract unique pabellones in this subject
@@ -155,6 +155,12 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     });
   }, [subject.alumnos, data.trabajadores, isStudyBible, enrollmentFilter]);
 
+  // Attendance rates stay scoped to confirmed enrollees and workers, even when
+  // the roster view is set to show pending/historical records for reconciliation.
+  const attendanceEligibleRows = useMemo(() => isStudyBible
+    ? subject.alumnos.filter(alu => isWorkerRecord(alu, data.trabajadores || []) || getEnrollmentStatus(alu) === 'inscripto')
+    : subject.alumnos, [subject.alumnos, data.trabajadores, isStudyBible]);
+
   // Filter students for attendance table
   const filteredStudents = useMemo(() => {
     return rosterFilteredStudents.filter(alu => {
@@ -176,7 +182,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     let aus = 0;
     let just = 0;
     let sin = 0;
-    const rows = isStudyBible ? rosterFilteredStudents : subject.alumnos;
+    const rows = attendanceEligibleRows;
 
     rows.forEach(alu => {
       const val = alu.asist?.[selectedDate];
@@ -190,13 +196,13 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     const marked = pres + aus + just;
     const pct = marked > 0 ? Math.round((pres / marked) * 100) : 0;
     return { pres, aus, just, sin, total, pct };
-  }, [subject.alumnos, selectedDate, isStudyBible, rosterFilteredStudents]);
+  }, [attendanceEligibleRows, selectedDate]);
 
   // Overall subject attendance pct
   const overallPct = useMemo(() => {
     let totalC = 0;
     let presC = 0;
-    const rows = isStudyBible ? rosterFilteredStudents : subject.alumnos;
+    const rows = attendanceEligibleRows;
     rows.forEach(alu => {
       if (alu.asist) {
         Object.entries(alu.asist).forEach(([d, val]) => {
@@ -208,7 +214,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
       }
     });
     return totalC > 0 ? Math.round((presC / totalC) * 100) : 0;
-  }, [subject, isStudyBible, rosterFilteredStudents]);
+  }, [subject, attendanceEligibleRows]);
 
   if (!data.materias.length) {
     return <div className="p-6 text-center text-slate-500">No hay materias seleccionadas.</div>;
@@ -688,7 +694,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
           </div>
           {isStudyBible && (
             <div className={`px-4 py-3 rounded-xl border text-xs ${darkMode ? 'bg-slate-900/70 border-slate-700 text-slate-300' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
-              Por defecto se muestran inscriptos confirmados y trabajadores. Los demás quedan separados para revisar; sus asistencias históricas se conservan.
+              Se muestran todas las filas de la materia para cotejar la ficha; el estado indica si está confirmado, pendiente o histórico. Solo inscriptos confirmados y trabajadores cuentan para asistencia; no se eliminan registros históricos.
             </div>
           )}
 
