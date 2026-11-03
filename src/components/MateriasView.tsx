@@ -74,7 +74,7 @@ export const MateriasView: React.FC<MateriasViewProps> = ({
           horario: formData.horario.trim()
         };
       }
-      showToast("Materia actualizada correctamente.", "success");
+      
     } else {
       const firstClassDate = todayISODate();
       const newSubject: Subject = {
@@ -87,7 +87,7 @@ export const MateriasView: React.FC<MateriasViewProps> = ({
         alumnos: createInitialSubjectRoster(data.trabajadores || [], firstClassDate)
       };
       updatedMaterias.push(newSubject);
-      showToast("Nueva materia creada correctamente.", "success");
+      
     }
 
     onUpdateData({
@@ -111,7 +111,7 @@ export const MateriasView: React.FC<MateriasViewProps> = ({
       ...data,
       materias: updatedMaterias
     });
-    showToast("Materia eliminada correctamente.", "info");
+    
   };
 
   const handleToggleStudentInSubject = (studentId: string) => {
@@ -143,7 +143,7 @@ export const MateriasView: React.FC<MateriasViewProps> = ({
       ...data,
       materias: updatedMaterias
     });
-    showToast("Inscripción de alumno actualizada.", "success");
+    
   };
 
   const cardClass = `p-6 rounded-2xl border ${darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`;

@@ -34,7 +34,7 @@ export const DuplicateModal: React.FC<DuplicateModalProps> = ({
       alumnos: updatedAlumnos,
       materias: updatedMaterias
     });
-    showToast("Registro duplicado eliminado.", "success");
+
   };
 
   return (

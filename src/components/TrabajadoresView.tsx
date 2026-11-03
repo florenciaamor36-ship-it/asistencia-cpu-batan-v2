@@ -118,7 +118,7 @@ export const TrabajadoresView: React.FC<TrabajadoresViewProps> = ({
           puesto: formData.puesto.toUpperCase()
         };
       }
-      showToast("Trabajador actualizado correctamente.", "success");
+      
     } else {
       const newWorker: Worker = {
         id: `trab_${Date.now()}`,
@@ -131,7 +131,7 @@ export const TrabajadoresView: React.FC<TrabajadoresViewProps> = ({
         observaciones: formData.observaciones
       };
       updatedTrabajadores.push(newWorker);
-      showToast("Nuevo trabajador agregado y marcado presente en todas las fechas.", "success");
+      
     }
 
     const updatedMaterias = data.materias.map(materia => ({
@@ -159,7 +159,7 @@ export const TrabajadoresView: React.FC<TrabajadoresViewProps> = ({
       ...data,
       trabajadores: updatedTrabajadores
     });
-    showToast("Trabajador eliminado.", "info");
+    
   };
 
   const handleExportExcel = () => {

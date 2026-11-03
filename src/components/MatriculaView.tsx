@@ -186,10 +186,10 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
       if (index !== -1) {
         updatedAlumnos[index] = { ...updatedAlumnos[index], ...studentData };
       }
-      showToast("Alumno actualizado correctamente.", "success");
+      
     } else {
       updatedAlumnos.push(studentData);
-      showToast("Nuevo alumno agregado correctamente.", "success");
+      
     }
 
     // Update materias enrollment based on selectedMaterias
@@ -232,7 +232,7 @@ export const MatriculaView: React.FC<MatriculaViewProps> = ({
       alumnos: updatedAlumnos,
       materias: updatedMaterias
     });
-    showToast("Alumno eliminado correctamente.", "info");
+    
   };
 
   const handleExportExcel = () => {

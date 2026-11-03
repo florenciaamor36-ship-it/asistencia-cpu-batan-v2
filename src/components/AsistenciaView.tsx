@@ -275,7 +275,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
       materias: updatedMaterias,
       alumnos: updatedAlumnosGlobal
     });
-    showToast("Asistencia actualizada.", "success");
+    
   };
 
   const handleSetEnrollmentStatus = (student: Student, status: EnrollmentStatus) => {
@@ -293,7 +293,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
       return { ...m, alumnos: updatedAlumnos };
     });
     onUpdateData({ ...data, materias: updatedMaterias });
-    showToast(`Estado de inscripción: ${enrollmentStatusLabel(status)}.`, 'success');
+    
   };
 
   const handleToggleMatrixCell = (studentId: string, dateStr: string) => {
@@ -351,7 +351,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
       materias: updatedMaterias,
       alumnos: updatedAlumnosGlobal
     });
-    showToast("Asistencia actualizada en planilla.", "success");
+    
   };
 
   const handleMarkAll = (status: boolean | string) => {
@@ -381,7 +381,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
 
     onUpdateData({ ...data, materias: updatedMaterias });
     const action = status === true || status === 'presente' ? 'Presentes' : 'Ausentes';
-    showToast(isStudyBible ? `Alumnos visibles marcados como ${action.toLowerCase()}.` : `Todos marcados como ${action}.`, "success");
+    
   };
 
   const handleUndo = () => {
@@ -414,7 +414,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     setSelectedDate(newDateInput);
     setNewDateInput('');
     setShowAddDateModal(false);
-    showToast("Fecha de clase agregada correctamente.", "success");
+    
   };
 
   const handleDeleteDate = (dateToDelete: string) => {
@@ -440,7 +440,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
 
     onUpdateData({ ...data, materias: updatedMaterias });
     setSelectedDate(latestDateChronologically(updatedFechas) || '');
-    showToast("Fecha de clase eliminada.", "info");
+    
   };
 
   const handleExportSubjectExcel = () => {

@@ -130,7 +130,7 @@ export const BackupView: React.FC<BackupViewProps> = ({
     onUpdateData(finalData);
     setShowPreviewModal(false);
     setParsedImportData(null);
-    showToast(importMode === 'merge' ? 'Respaldo combinado sin reemplazar registros actuales.' : 'Respaldo restaurado.', 'success');
+
   };
 
   const cardClass = `p-6 rounded-2xl border ${darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`;
