@@ -23,6 +23,8 @@ import {
 import * as XLSX from 'xlsx';
 import { attendanceValueForDate, latestDateChronologically, sameCalendarDate, sortDatesChronologically, todayISODate } from '../utils/dates';
 import { isSameWorkerIdentity, markWorkersPresentForNewDate, summarizeAttendance } from '../utils/attendance';
+import { setAttendanceForDate, nextMatrixAttendance } from '../utils/attendanceWrites';
+import { attendanceDisabled } from '../utils/attendanceAccess';
 
 const EMPTY_SUBJECT: Subject = { id: '', nombre: '', dias: [], horario: '', fechas: [], alumnos: [] };
 
@@ -198,8 +200,6 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     return <div className="p-6 text-center text-slate-500">No hay materias seleccionadas.</div>;
   }
 
-  const canMarkAttendance = (student: Student) => !isStudyBible ||
-    isWorkerRecord(student, data.trabajadores || []) || getEnrollmentStatus(student) === 'inscripto';
 
   const renderEnrollmentControl = (student: Student) => {
     if (!isStudyBible) return null;
@@ -232,42 +232,28 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     }
 
     const student = subject.alumnos.find(s => s.id === studentId);
-    if (isStudyBible && student && !canMarkAttendance(student)) {
-      showToast("Confirmá la inscripción antes de cargar asistencia.", "error");
-      return;
-    }
-    const prevVal = student?.asist?.[actionDate];
+    // Attendance can be recorded for pending rows too; enrollment eligibility
+    // remains separate and continues to control statistics and confirmed counts.
+    const prevVal = attendanceValueForDate(student?.asist, actionDate);
     setLastAction({ studentId, date: actionDate, prevVal });
 
     const updatedMaterias = data.materias.map(m => {
       if (m.id !== subject.id) return m;
+      let changed = false;
       const updatedAlumnos = m.alumnos.map(alu => {
-        if (alu.id !== studentId) return alu;
-        return {
-          ...alu,
-          asist: (() => {
-            const next = { ...(alu.asist || {}) };
-            if (status === undefined || status === '') delete next[actionDate];
-            else next[actionDate] = status;
-            return next;
-          })()
-        };
+        if (changed || alu.id !== studentId) return alu;
+        changed = true;
+        return { ...alu, asist: setAttendanceForDate(alu.asist, actionDate, status === '' ? undefined : status) };
       });
       return { ...m, alumnos: updatedAlumnos };
     });
 
     // Also update global alumnos list if needed
+    let globalChanged = false;
     const updatedAlumnosGlobal = data.alumnos.map(alu => {
-      if (alu.id !== studentId) return alu;
-      return {
-        ...alu,
-        asist: (() => {
-          const next = { ...(alu.asist || {}) };
-          if (status === undefined || status === '') delete next[actionDate];
-          else next[actionDate] = status;
-          return next;
-        })()
-      };
+      if (globalChanged || alu.id !== studentId) return alu;
+      globalChanged = true;
+      return { ...alu, asist: setAttendanceForDate(alu.asist, actionDate, status === '' ? undefined : status) };
     });
 
     onUpdateData({
@@ -303,47 +289,27 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     }
 
     const student = subject.alumnos.find(s => s.id === studentId);
-    if (isStudyBible && student && !canMarkAttendance(student)) {
-      showToast("Confirmá la inscripción antes de cargar asistencia.", "error");
-      return;
-    }
-    const currentVal = student?.asist?.[dateStr];
-    // Toggle: undefined/false -> true (presente), true -> false (ausente), false -> undefined
-    let nextVal: boolean | string = true;
-    if (currentVal === true || currentVal === 'presente') {
-      nextVal = false;
-    } else if (currentVal === false || currentVal === 'ausente') {
-      nextVal = 'justificado';
-    } else if (currentVal === 'justificado') {
-      nextVal = '';
-    } else {
-      nextVal = true;
-    }
+    // Attendance can be recorded for pending rows too; enrollment eligibility
+    // remains separate and continues to control statistics and confirmed counts.
+    const currentVal = attendanceValueForDate(student?.asist, dateStr);
+    const nextVal = nextMatrixAttendance(currentVal);
 
     const updatedMaterias = data.materias.map(m => {
       if (m.id !== subject.id) return m;
+      let changed = false;
       const updatedAlumnos = m.alumnos.map(alu => {
-        if (alu.id !== studentId) return alu;
-        const newAsist = { ...(alu.asist || {}) };
-        if (nextVal === '') {
-          delete newAsist[dateStr];
-        } else {
-          newAsist[dateStr] = nextVal;
-        }
-        return { ...alu, asist: newAsist };
+        if (changed || alu.id !== studentId) return alu;
+        changed = true;
+        return { ...alu, asist: setAttendanceForDate(alu.asist, dateStr, nextVal) };
       });
       return { ...m, alumnos: updatedAlumnos };
     });
 
+    let globalChanged = false;
     const updatedAlumnosGlobal = data.alumnos.map(alu => {
-      if (alu.id !== studentId) return alu;
-      const newAsist = { ...(alu.asist || {}) };
-      if (nextVal === '') {
-        delete newAsist[dateStr];
-      } else {
-        newAsist[dateStr] = nextVal;
-      }
-      return { ...alu, asist: newAsist };
+      if (globalChanged || alu.id !== studentId) return alu;
+      globalChanged = true;
+      return { ...alu, asist: setAttendanceForDate(alu.asist, dateStr, nextVal) };
     });
 
     onUpdateData({
@@ -364,16 +330,11 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
     const updatedMaterias = data.materias.map(m => {
       if (m.id !== subject.id) return m;
       const updatedAlumnos = m.alumnos.map(alu => {
-        const shouldUpdate = !isStudyBible || (visibleRows.has(alu) && canMarkAttendance(alu));
+        const shouldUpdate = !isStudyBible || visibleRows.has(alu);
         if (!shouldUpdate) return alu;
         return {
           ...alu,
-          asist: (() => {
-            const next = { ...(alu.asist || {}) };
-            if (status === undefined || status === '') delete next[selectedDate];
-            else next[selectedDate] = status;
-            return next;
-          })()
+          asist: setAttendanceForDate(alu.asist, selectedDate, status === '' ? undefined : status)
         };
       });
       return { ...m, alumnos: updatedAlumnos };
@@ -729,7 +690,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                             <div className="flex items-center justify-center space-x-2 whitespace-nowrap">
                               {/* Presente */}
                               <button
-                                disabled={role === 'espectador' || !canMarkAttendance(alu)}
+                                disabled={attendanceDisabled(role)}
                                 onClick={() => handleSetAttendance(alu.id, true)}
                                 className={`flex shrink-0 items-center space-x-1 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
                                   isPresent 
@@ -743,7 +704,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
 
                               {/* Ausente */}
                               <button
-                                disabled={role === 'espectador' || !canMarkAttendance(alu)}
+                                disabled={attendanceDisabled(role)}
                                 onClick={() => handleSetAttendance(alu.id, false)}
                                 className={`flex shrink-0 items-center space-x-1 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
                                   isAbsent 
@@ -757,7 +718,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
 
                               {/* Justificado */}
                               <button
-                                disabled={role === 'espectador' || !canMarkAttendance(alu)}
+                                disabled={attendanceDisabled(role)}
                                 onClick={() => handleSetAttendance(alu.id, 'justificado')}
                                 className={`flex shrink-0 items-center space-x-1 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
                                   isJustified 
@@ -852,7 +813,7 @@ export const AsistenciaView: React.FC<AsistenciaViewProps> = ({
                         return (
                           <td key={`${f}-${dateIndex}`} className="min-w-[84px] py-2.5 px-3 text-center">
                             <button
-                              disabled={role === 'espectador' || !canMarkAttendance(alu)}
+                              disabled={attendanceDisabled(role)}
                               onClick={() => handleToggleMatrixCell(alu.id, f)}
                               className={`w-8 h-8 rounded-xl font-bold text-xs inline-flex items-center justify-center transition shadow-xs ${
                                 isP 

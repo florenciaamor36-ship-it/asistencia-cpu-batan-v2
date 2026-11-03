@@ -7,6 +7,17 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://ayoxwnqzrfojk
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const API = `${SUPABASE_URL}/rest/v1/app_data`;
 
+// PATCH requests are serialized: PostgREST replaces the whole JSON payload, so
+// concurrent saves must not let an older snapshot finish after a newer one.
+let saveTail: Promise<unknown> = Promise.resolve();
+let activeSaves = 0;
+let saveGeneration = 0;
+function queueSave<T>(task: () => Promise<T>): Promise<T> {
+  const result = saveTail.then(task, task);
+  saveTail = result.then(() => undefined, () => undefined);
+  return result;
+}
+
 function normalizarPlanillas(target: any): any {
   for (const materia of (target?.materias || [])) {
     if (!Array.isArray(materia.fechas)) materia.fechas = [];
@@ -66,21 +77,34 @@ export const StorageService = {
       })),
       last_updated: new Date().toISOString()
     };
+    // Local cache is immediately updated for offline continuity. Remote snapshots
+    // are serialized below so the last user action wins even under fast clicks.
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
     if (!SUPABASE_KEY) return false;
+    activeSaves++;
+    saveGeneration++;
     try {
-      const res = await fetch(`${API}?id=eq.1`, { method: 'PATCH', headers: { ...headers(), Prefer: 'return=representation' }, body: JSON.stringify({ payload: { record: dataToSave }, updated_at: dataToSave.last_updated }) });
-      if (!res.ok) return false;
-      const updatedRows = await res.json();
-      return Array.isArray(updatedRows) && updatedRows.length > 0;
-    } catch (e) { console.warn('No se pudo guardar en Supabase.', e); return false; }
+      return await queueSave(async () => {
+        try {
+          const res = await fetch(`${API}?id=eq.1`, { method: 'PATCH', headers: { ...headers(), Prefer: 'return=representation' }, body: JSON.stringify({ payload: { record: dataToSave }, updated_at: dataToSave.last_updated }) });
+          if (!res.ok) return false;
+          const updatedRows = await res.json();
+          return Array.isArray(updatedRows) && updatedRows.length > 0;
+        } catch (e) { console.warn('No se pudo guardar en Supabase.', e); return false; }
+      });
+    } finally {
+      activeSaves--;
+    }
   },
 
   startRealtime(onData: (data: AppData) => void): () => void {
     if (!SUPABASE_KEY) return () => {};
     let last = '';
     const poll = async () => {
-      try { const r = await fetch(`${API}?id=eq.1&select=payload,updated_at`, { headers: headers() }); const rows = await r.json(); const n = normalize(rows?.[0]); const stamp = rows?.[0]?.updated_at || n?.last_updated || ''; if (n && stamp !== last) { last = stamp; localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(n)); onData(n); } } catch {}
+      // Ignore a poll that overlaps local writes or was started before one.
+      // Otherwise a stale server read can roll back an optimistic attendance click.
+      const generationAtStart = saveGeneration;
+      try { const r = await fetch(`${API}?id=eq.1&select=payload,updated_at`, { headers: headers() }); const rows = await r.json(); const n = normalize(rows?.[0]); const stamp = rows?.[0]?.updated_at || n?.last_updated || ''; if (n && activeSaves === 0 && generationAtStart === saveGeneration && stamp !== last) { last = stamp; localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(n)); onData(n); } } catch {}
     };
     const timer = window.setInterval(poll, 3000); poll();
     return () => window.clearInterval(timer);
