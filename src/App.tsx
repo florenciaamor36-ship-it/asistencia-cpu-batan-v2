@@ -65,9 +65,10 @@ export default function App() {
     setData(newData);
     try {
       const saved = await StorageService.saveData(newData);
-      if (!saved) showToast('No se pudo sincronizar con el servidor. Los cambios quedaron solo en este dispositivo.', 'error');
+      if (saved) showToast('Cambios guardados y sincronizados con el servidor.', 'success');
+      else showToast('No se pudo sincronizar con el servidor. Los cambios quedaron solo en este dispositivo; no se reintenta automáticamente.', 'error');
     } catch {
-      showToast('No se pudo sincronizar con el servidor. Los cambios quedaron solo en este dispositivo.', 'error');
+      showToast('No se pudo sincronizar con el servidor. Los cambios quedaron solo en este dispositivo; no se reintenta automáticamente.', 'error');
     }
   };
 
