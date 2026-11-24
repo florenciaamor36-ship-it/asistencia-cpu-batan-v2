@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AppData, ViewMode, Student } from './types';
+import { createDemoData } from './data/demoData';
 import { StorageService } from './services/storage';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
@@ -17,11 +18,13 @@ import { Toast } from './components/Toast';
 import { AboutView } from './components/AboutView';
 import { InstallPrompt } from './components/InstallPrompt';
 
+const DEMO_MODE = new URLSearchParams(window.location.search).get('demo') === '1';
+
 export default function App() {
   const [data, setData] = useState<AppData | null>(null);
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
-  const [role, setRole] = useState<'admin' | 'espectador'>(StorageService.getRole());
+  const [role, setRole] = useState<'admin' | 'espectador'>(DEMO_MODE ? 'admin' : StorageService.getRole());
   const [darkMode, setDarkMode] = useState<boolean>(true);
   const [loadError, setLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
@@ -37,6 +40,15 @@ export default function App() {
     let stopRealtime = () => {};
     setData(null);
     setLoadError(false);
+
+    // El modo demo usa solo datos sintéticos en memoria; no toca Supabase ni la caché local.
+    if (DEMO_MODE) {
+      setData(createDemoData());
+      setSelectedSubjectId('demo-materia-1');
+      setRole('admin');
+      setDarkMode(true);
+      return () => { active = false; };
+    }
 
     // Carga inicial con timeout: si no hay red ni caché, mostramos la pantalla de conexión.
     StorageService.loadData().then(loaded => {
@@ -63,6 +75,10 @@ export default function App() {
 
   const handleUpdateData = async (newData: AppData) => {
     setData(newData);
+    if (DEMO_MODE) {
+      showToast('Cambio de prueba aplicado solo en esta sesión. Los datos reales no se modifican.', 'info');
+      return;
+    }
     try {
       const saved = await StorageService.saveData(newData);
       if (saved) showToast('Cambios guardados y sincronizados con el servidor.', 'success');
@@ -73,6 +89,10 @@ export default function App() {
   };
 
   const handleRefreshData = async () => {
+    if (DEMO_MODE) {
+      showToast('La demo usa datos ficticios y no consulta el servidor real.', 'info');
+      return;
+    }
     try {
       const fresh = await StorageService.loadRemoteData();
       setData(fresh);
@@ -83,7 +103,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    StorageService.setRole('espectador');
+    if (!DEMO_MODE) StorageService.setRole('espectador');
     setRole('espectador');
     showToast("Sesión de administrador cerrada. Cambiado a modo Espectador.", "info");
   };
@@ -118,6 +138,11 @@ export default function App() {
       />
 
       <InstallPrompt darkMode={darkMode} />
+      {DEMO_MODE && (
+        <div className="flex items-center justify-center gap-2 bg-amber-400 px-3 py-2 text-center text-xs font-bold text-slate-950 sm:text-sm">
+          <span aria-hidden="true">●</span> DEMO DE PRUEBA · datos ficticios · los cambios no se guardan ni afectan el sistema real
+        </div>
+      )}
 
       {/* Main Body Layout */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-w-0">
@@ -218,6 +243,7 @@ export default function App() {
           }}
           darkMode={darkMode}
           showToast={showToast}
+          demoMode={DEMO_MODE}
         />
       )}
 

@@ -6,6 +6,7 @@ interface LoginModalProps {
   onLoginSuccess: () => void;
   darkMode: boolean;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
+  demoMode?: boolean;
 }
 
 const ADMIN_PASSWORD_HASH = '2f55a97b7bf5835b0b016e737de850dd07c0fcf6f9361f44a8bce8da2696746a';
@@ -16,7 +17,7 @@ async function hashPassword(value: string) {
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-export const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLoginSuccess, darkMode, showToast }) => {
+export const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLoginSuccess, darkMode, showToast, demoMode = false }) => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -47,16 +48,20 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLoginSuccess,
         </button>
         <div className="text-center mb-6">
           <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white mx-auto flex items-center justify-center shadow-lg mb-3"><ShieldCheck className="w-6 h-6" /></div>
-          <h3 className="text-lg font-bold">Modo Administrador</h3>
-          <p className={`text-xs mt-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Ingrese la contraseña de administrador para desbloquear las funciones de edición y gestión.</p>
+          <h3 className="text-lg font-bold">{demoMode ? 'Administrador de demo' : 'Modo Administrador'}</h3>
+          <p className={`text-xs mt-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{demoMode ? 'Entrás con datos ficticios. Los cambios quedan solo en la demo.' : 'Ingrese la contraseña de administrador para desbloquear las funciones de edición y gestión.'}</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-            <input type="password" required autoComplete="current-password" placeholder="Contraseña" value={password} onChange={e => setPassword(e.target.value)} className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm ${darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`} />
-          </div>
-          <button type="submit" disabled={isLoading} className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md transition disabled:opacity-50">{isLoading ? 'Verificando...' : 'Iniciar Sesión'}</button>
-        </form>
+        {demoMode ? (
+          <button type="button" onClick={() => { onLoginSuccess(); onClose(); }} className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700">Entrar como administrador de demo</button>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+              <input type="password" required autoComplete="current-password" placeholder="Contraseña" value={password} onChange={e => setPassword(e.target.value)} className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm ${darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`} />
+            </div>
+            <button type="submit" disabled={isLoading} className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md transition disabled:opacity-50">{isLoading ? 'Verificando...' : 'Iniciar Sesión'}</button>
+          </form>
+        )}
       </div>
     </div>
   );
