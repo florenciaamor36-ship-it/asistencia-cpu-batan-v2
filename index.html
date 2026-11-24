@@ -21,7 +21,23 @@
     <div id="root"></div>
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+        window.addEventListener('load', () => {
+          const isPublicDemo = new URLSearchParams(window.location.search).get('demo') === '1';
+          if (isPublicDemo) {
+            // Keep the public preview on fresh assets, never on a cached app shell.
+            navigator.serviceWorker.getRegistrations().then(registrations =>
+              Promise.all(registrations.map(registration => registration.unregister()))
+            );
+            if ('caches' in window) {
+              caches.keys().then(keys => Promise.all(keys
+                .filter(key => key.startsWith('cpu-batan-v'))
+                .map(key => caches.delete(key))
+              ));
+            }
+          } else {
+            navigator.serviceWorker.register('./sw.js');
+          }
+        });
       }
     </script>
     <script type="module" src="/src/main.tsx"></script>
