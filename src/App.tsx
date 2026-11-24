@@ -5,6 +5,7 @@ import { StorageService } from './services/storage';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { DashboardView } from './components/DashboardView';
+import { DemoOverview } from './components/DemoOverview';
 import { MatriculaView } from './components/MatriculaView';
 import { MateriasView } from './components/MateriasView';
 import { AsistenciaView } from './components/AsistenciaView';
@@ -127,7 +128,10 @@ export default function App() {
 
   const content = (
     <div className="w-full min-w-0">
-      {currentView === 'dashboard' && <DashboardView data={data} onSelectView={setCurrentView} onSelectSubject={setSelectedSubjectId} darkMode={darkMode} />}
+      {currentView === 'dashboard' && (DEMO_MODE
+        ? <DemoOverview data={data} onSelectView={setCurrentView} onSelectSubject={setSelectedSubjectId} />
+        : <DashboardView data={data} onSelectView={setCurrentView} onSelectSubject={setSelectedSubjectId} darkMode={darkMode} />
+      )}
       {currentView === 'matricula' && <MatriculaView data={data} role={role} onUpdateData={handleUpdateData} onViewStudentDetail={setSelectedStudentDetail} onOpenDuplicateModal={() => setDuplicateModalOpen(true)} darkMode={darkMode} showToast={showToast} />}
       {currentView === 'materias' && <MateriasView data={data} role={role} onUpdateData={handleUpdateData} darkMode={darkMode} showToast={showToast} />}
       {currentView === 'asistencia' && selectedSubjectId && <AsistenciaView data={data} subjectId={selectedSubjectId} role={role} onUpdateData={handleUpdateData} darkMode={darkMode} showToast={showToast} />}
