@@ -17,6 +17,7 @@ import { DuplicateModal } from './components/DuplicateModal';
 import { Toast } from './components/Toast';
 import { AboutView } from './components/AboutView';
 import { InstallPrompt } from './components/InstallPrompt';
+import { DemoShell } from './components/DemoShell';
 
 const DEMO_MODE = new URLSearchParams(window.location.search).get('demo') === '1';
 
@@ -25,7 +26,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
   const [role, setRole] = useState<'admin' | 'espectador'>(DEMO_MODE ? 'admin' : StorageService.getRole());
-  const [darkMode, setDarkMode] = useState<boolean>(true);
+  const [darkMode, setDarkMode] = useState<boolean>(!DEMO_MODE);
   const [loadError, setLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -46,7 +47,7 @@ export default function App() {
       setData(createDemoData());
       setSelectedSubjectId('demo-materia-1');
       setRole('admin');
-      setDarkMode(true);
+      setDarkMode(false);
       return () => { active = false; };
     }
 
@@ -124,121 +125,42 @@ export default function App() {
     );
   }
 
-  return (
-    <div className={`min-h-screen flex flex-col transition-colors duration-200 ${darkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
-      {/* Header */}
-      <Header
-        role={role}
-        onOpenLogin={() => setLoginModalOpen(true)}
-        onLogout={handleLogout}
-        lastSynced={data.last_updated || ''}
-        darkMode={darkMode}
-        onToggleDarkMode={() => setDarkMode(!darkMode)}
-        onRefreshData={handleRefreshData}
-      />
+  const content = (
+    <div className="w-full min-w-0">
+      {currentView === 'dashboard' && <DashboardView data={data} onSelectView={setCurrentView} onSelectSubject={setSelectedSubjectId} darkMode={darkMode} />}
+      {currentView === 'matricula' && <MatriculaView data={data} role={role} onUpdateData={handleUpdateData} onViewStudentDetail={setSelectedStudentDetail} onOpenDuplicateModal={() => setDuplicateModalOpen(true)} darkMode={darkMode} showToast={showToast} />}
+      {currentView === 'materias' && <MateriasView data={data} role={role} onUpdateData={handleUpdateData} darkMode={darkMode} showToast={showToast} />}
+      {currentView === 'asistencia' && selectedSubjectId && <AsistenciaView data={data} subjectId={selectedSubjectId} role={role} onUpdateData={handleUpdateData} darkMode={darkMode} showToast={showToast} />}
+      {currentView === 'trabajadores' && <TrabajadoresView data={data} role={role} onUpdateData={handleUpdateData} darkMode={darkMode} showToast={showToast} />}
+      {currentView === 'estadisticas' && <EstadisticasView data={data} darkMode={darkMode} />}
+      {currentView === 'acerca' && <AboutView darkMode={darkMode} />}
+      {currentView === 'respaldo' && <BackupView data={data} role={role} onUpdateData={handleUpdateData} darkMode={darkMode} showToast={showToast} />}
+    </div>
+  );
 
-      <InstallPrompt darkMode={darkMode} />
-      {DEMO_MODE && (
-        <div className="flex items-center justify-center gap-2 bg-amber-400 px-3 py-2 text-center text-xs font-bold text-slate-950 sm:text-sm">
-          <span aria-hidden="true">●</span> DEMO DE PRUEBA · datos ficticios · los cambios no se guardan ni afectan el sistema real
+  return (
+    <>
+      {DEMO_MODE ? (
+        <DemoShell data={data} currentView={currentView} selectedSubjectId={selectedSubjectId} onSelectView={setCurrentView} onSelectSubject={setSelectedSubjectId}>
+          {content}
+        </DemoShell>
+      ) : (
+        <div className="min-h-screen flex flex-col transition-colors duration-200 dark bg-slate-950 text-slate-100">
+          <Header role={role} onOpenLogin={() => setLoginModalOpen(true)} onLogout={handleLogout} lastSynced={data.last_updated || ''} darkMode={darkMode} onToggleDarkMode={() => setDarkMode(!darkMode)} onRefreshData={handleRefreshData} />
+          <InstallPrompt darkMode={darkMode} />
+          <div className="flex-1 flex min-w-0 flex-col overflow-hidden md:flex-row">
+            <Sidebar currentView={currentView} selectedSubjectId={selectedSubjectId} onSelectView={setCurrentView} onSelectSubject={setSelectedSubjectId} materias={data.materias} darkMode={darkMode} />
+            <main className="min-w-0 w-full max-w-full flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-6 lg:p-8"><div className="mx-auto w-full min-w-0 max-w-7xl">{content}</div></main>
+          </div>
         </div>
       )}
-
-      {/* Main Body Layout */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-w-0">
-        {/* Sidebar */}
-        <Sidebar
-          currentView={currentView}
-          selectedSubjectId={selectedSubjectId}
-          onSelectView={setCurrentView}
-          onSelectSubject={setSelectedSubjectId}
-          materias={data.materias}
-          darkMode={darkMode}
-        />
-
-        {/* Content Area */}
-        <main className="flex-1 min-w-0 w-full max-w-full overflow-x-hidden overflow-y-auto p-3 sm:p-6 lg:p-8">
-          <div className="w-full max-w-7xl mx-auto min-w-0">
-            {currentView === 'dashboard' && (
-              <DashboardView
-                data={data}
-                onSelectView={setCurrentView}
-                onSelectSubject={setSelectedSubjectId}
-                darkMode={darkMode}
-              />
-            )}
-
-            {currentView === 'matricula' && (
-              <MatriculaView
-                data={data}
-                role={role}
-                onUpdateData={handleUpdateData}
-                onViewStudentDetail={setSelectedStudentDetail}
-                onOpenDuplicateModal={() => setDuplicateModalOpen(true)}
-                darkMode={darkMode}
-                showToast={showToast}
-              />
-            )}
-
-            {currentView === 'materias' && (
-              <MateriasView
-                data={data}
-                role={role}
-                onUpdateData={handleUpdateData}
-                darkMode={darkMode}
-                showToast={showToast}
-              />
-            )}
-
-            {currentView === 'asistencia' && selectedSubjectId && (
-              <AsistenciaView
-                data={data}
-                subjectId={selectedSubjectId}
-                role={role}
-                onUpdateData={handleUpdateData}
-                darkMode={darkMode}
-                showToast={showToast}
-              />
-            )}
-
-            {currentView === 'trabajadores' && (
-              <TrabajadoresView
-                data={data}
-                role={role}
-                onUpdateData={handleUpdateData}
-                darkMode={darkMode}
-                showToast={showToast}
-              />
-            )}
-
-            {currentView === 'estadisticas' && (
-              <EstadisticasView
-                data={data}
-                darkMode={darkMode}
-              />
-            )}
-
-            {currentView === 'acerca' && <AboutView darkMode={darkMode} />}
-
-            {currentView === 'respaldo' && (
-              <BackupView
-                data={data}
-                role={role}
-                onUpdateData={handleUpdateData}
-                darkMode={darkMode}
-                showToast={showToast}
-              />
-            )}
-          </div>
-        </main>
-      </div>
 
       {/* Modals */}
       {loginModalOpen && (
         <LoginModal
           onClose={() => setLoginModalOpen(false)}
           onLoginSuccess={() => {
-            StorageService.setRole('admin');
+            if (!DEMO_MODE) StorageService.setRole('admin');
             setRole('admin');
           }}
           darkMode={darkMode}
@@ -275,6 +197,6 @@ export default function App() {
           onClose={() => setToastMessage(null)}
         />
       )}
-    </div>
+    </>
   );
 }
