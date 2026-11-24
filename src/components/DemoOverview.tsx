@@ -1,7 +1,8 @@
 import React from 'react';
-import { AppData, ViewMode } from '../types';
-import { Activity, ArrowUpRight, BookOpen, CalendarCheck, Check, ChevronRight, Clock3, GraduationCap, Users, UserRoundCheck } from 'lucide-react';
-import { summarizeAttendance } from '../utils/attendance';
+import { AppData, ViewMode, Student } from '../types';
+import { Activity, ArrowUpRight, BookOpen, BriefcaseBusiness, CalendarCheck, CalendarDays, CheckCircle2, ChevronRight, Clock3, GraduationCap, Plus, UserRoundCheck, UserRoundX, Users, type LucideIcon } from 'lucide-react';
+import { attendanceValueForDate, latestDateChronologically } from '../utils/dates';
+import { isAttendanceEligibleStudent, summarizeAttendance } from '../utils/attendance';
 
 interface DemoOverviewProps {
   data: AppData;
@@ -9,109 +10,142 @@ interface DemoOverviewProps {
   onSelectSubject: (id: string) => void;
 }
 
-const shortName = (name: string) => name.trim().split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase();
+type Counts = { present: number; absent: number; justified: number; unmarked: number; late: number };
+const statusFor = (student: Student, date: string): keyof Counts => {
+  const value = attendanceValueForDate(student.asist, date);
+  if (value === true || value === 'presente') return 'present';
+  if (value === false || value === 'ausente') return 'absent';
+  if (value === 'justificado') return 'justified';
+  if (value === 'tarde') return 'late';
+  return 'unmarked';
+};
+const percent = (value: number, total: number) => total ? Math.round(value / total * 100) : 0;
+const formatDate = (value?: string) => value ? new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short', timeZone: 'UTC' }).format(new Date(`${value.slice(0, 10)}T00:00:00Z`)) : 'Sin fechas';
 
-export const DemoOverview: React.FC<DemoOverviewProps> = ({ data, onSelectView, onSelectSubject }) => {
-  const enrolled = data.alumnos.length;
-  const workers = data.trabajadores.length;
-  const totalClasses = data.materias.reduce((sum, item) => sum + (item.fechas?.length || 0), 0);
-  const totals = data.materias.reduce((sum, item) => {
-    const summary = summarizeAttendance(item, data.trabajadores || []);
-    sum.present += summary.presentes;
-    sum.possible += summary.posibles;
-    return sum;
-  }, { present: 0, possible: 0 });
-  const attendanceRate = totals.possible ? Math.round(totals.present / totals.possible * 100) : 0;
-  const today = new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date());
-  const subjectSummaries = data.materias.map(subject => ({
-    subject,
-    summary: summarizeAttendance(subject, data.trabajadores || []),
-    roster: subject.alumnos.length
-  }));
-  const activity = [
-    ...subjectSummaries.slice(0, 2).map(({ subject, roster, summary }) => ({
-      initials: 'AS', tone: 'blue', title: 'Asistencia actualizada', note: `${subject.nombre} · ${summary.presentes} presentes de ${roster} registros`,
-      time: subject.horario || 'Registro de clase', kind: 'attendance' as const, subjectId: subject.id
-    })),
-    { initials: 'MT', tone: 'violet', title: 'Materia disponible', note: `${data.materias[0]?.nombre || 'Nueva materia'} · lista de alumnos`, time: 'Panel institucional', kind: 'subject' as const, subjectId: data.materias[0]?.id || '' },
-    { initials: 'CP', tone: 'amber', title: 'Personal institucional', note: `${workers} trabajadores en la nómina`, time: 'CPU Batán', kind: 'workers' as const, subjectId: '' }
-  ];
-  const colors = [
-    { bar: 'bg-blue-500', tint: 'bg-blue-50 text-blue-700', dot: 'bg-blue-500' },
-    { bar: 'bg-violet-500', tint: 'bg-violet-50 text-violet-700', dot: 'bg-violet-500' },
-    { bar: 'bg-emerald-500', tint: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
-    { bar: 'bg-amber-500', tint: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500' }
-  ];
-
-  return (
-    <div className="space-y-6 text-slate-800">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-600">Centro de Producción y Universitario</p>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Panel general</h1>
-          <p className="mt-1 text-sm capitalize text-slate-500">{today} <span className="mx-1 text-slate-300">·</span> Resumen de actividad institucional</p>
-        </div>
-        <button type="button" onClick={() => onSelectView('estadisticas')} className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 sm:self-auto"><Activity className="h-4 w-4" /> Ver estadísticas <ArrowUpRight className="h-4 w-4" /></button>
-      </div>
-
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4" aria-label="Indicadores principales">
-        {[
-          { title: 'Alumnos registrados', value: enrolled, suffix: 'en padrón de matrícula', icon: Users, accent: 'text-blue-600', bg: 'bg-blue-50', sub: 'Matrícula vigente' },
-          { title: 'Materias activas', value: data.materias.length, suffix: 'listas independientes', icon: BookOpen, accent: 'text-violet-600', bg: 'bg-violet-50', sub: 'Cursos y talleres' },
-          { title: 'Presentes acumulados', value: `${attendanceRate}%`, suffix: `${totals.present} de ${totals.possible} registros`, icon: UserRoundCheck, accent: 'text-emerald-600', bg: 'bg-emerald-50', sub: 'Asistencia registrada' },
-          { title: 'Clases registradas', value: totalClasses, suffix: `${workers} trabajadores institucionales`, icon: CalendarCheck, accent: 'text-amber-600', bg: 'bg-amber-50', sub: 'Fechas cargadas' }
-        ].map(({ title, value, suffix, icon: Icon, accent, bg, sub }) => (
-          <article key={title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/60 transition hover:-translate-y-0.5 hover:shadow-md">
-            <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold text-slate-500">{title}</p><p className="mt-3 text-3xl font-bold tracking-tight text-slate-900">{value}</p></div><span className={`flex h-11 w-11 items-center justify-center rounded-xl ${bg} ${accent}`}><Icon className="h-5 w-5" /></span></div>
-            <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3"><span className="text-[11px] font-medium text-slate-500">{sub}</span><span className="truncate text-right text-[10px] text-slate-400">{suffix}</span></div>
-          </article>
-        ))}
-      </section>
-
-      <section className="grid grid-cols-1 gap-5 2xl:grid-cols-[1.45fr_1fr]">
-        <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/60 sm:p-6">
-          <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-base font-bold text-slate-900">Asistencia por materia</h2><p className="mt-1 text-xs text-slate-500">Porcentaje de presentes sobre los registros posibles</p></div><span className="rounded-lg bg-slate-50 px-2.5 py-1.5 text-[10px] font-semibold text-slate-500">{data.materias.length} materias</span></div>
-          {subjectSummaries.length ? <div className="mt-6 space-y-5">
-            {subjectSummaries.map(({ subject, summary, roster }, index) => {
-              const color = colors[index % colors.length];
-              return <button key={subject.id} type="button" onClick={() => { onSelectSubject(subject.id); onSelectView('asistencia'); }} className="group w-full text-left">
-                <div className="mb-2 flex items-center justify-between gap-3"><span className="truncate text-xs font-semibold text-slate-700 group-hover:text-blue-700">{subject.nombre}</span><span className="shrink-0 text-xs font-bold tabular-nums text-slate-700">{summary.porcentaje}%</span></div>
-                <div className="h-2.5 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full ${color.bar} transition-all`} style={{ width: `${summary.porcentaje}%` }} /></div>
-                <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-400"><span>{summary.presentes} presentes · {summary.ausentes} ausentes · {summary.justificados} justificados</span><span>{roster} registros</span></div>
-              </button>;
-            })}
-          </div> : <EmptyState title="No hay materias para mostrar" action="Abrir gestión de materias" onClick={() => onSelectView('materias')} />}
-        </article>
-
-        <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/60 sm:p-6">
-          <div className="flex items-start justify-between gap-3"><div><h2 className="text-base font-bold text-slate-900">Actividad reciente</h2><p className="mt-1 text-xs text-slate-500">Resumen de las listas de asistencia</p></div><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50 text-slate-500"><Clock3 className="h-4 w-4" /></span></div>
-          <div className="mt-4 divide-y divide-slate-100">
-            {activity.map((item, index) => <button key={`${item.title}-${index}`} type="button" onClick={() => item.kind === 'workers' ? onSelectView('trabajadores') : item.subjectId ? (onSelectSubject(item.subjectId), onSelectView('asistencia')) : onSelectView('dashboard')} className="flex w-full items-start gap-3 py-3 text-left first:pt-1 last:pb-1">
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${item.tone === 'blue' ? 'bg-blue-50 text-blue-700' : item.tone === 'violet' ? 'bg-violet-50 text-violet-700' : 'bg-amber-50 text-amber-700'}`}>{item.initials}</span>
-              <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-slate-800">{item.title}</span><span className="mt-1 block text-[11px] leading-4 text-slate-500">{item.note}</span><span className="mt-1.5 block text-[10px] text-slate-400">{item.time}</span></span>
-              <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-slate-300" />
-            </button>)}
-          </div>
-        </article>
-      </section>
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/60 sm:p-6">
-        <div className="flex flex-wrap items-end justify-between gap-3"><div><h2 className="text-base font-bold text-slate-900">Materias y talleres</h2><p className="mt-1 text-xs text-slate-500">Acceso directo a cada nómina y sus clases</p></div><button type="button" onClick={() => onSelectView('materias')} className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-900">Ver todas <ChevronRight className="h-4 w-4" /></button></div>
-        {subjectSummaries.length ? <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
-          {subjectSummaries.map(({ subject, summary, roster }, index) => <button key={subject.id} type="button" onClick={() => { onSelectSubject(subject.id); onSelectView('asistencia'); }} className="rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50/40 hover:shadow-sm">
-            <div className="flex items-start justify-between gap-3"><span className={`flex h-9 w-9 items-center justify-center rounded-lg ${colors[index % colors.length].tint}`}><BookOpen className="h-4 w-4" /></span><ChevronRight className="h-4 w-4 text-slate-300" /></div>
-            <h3 className="mt-3 text-sm font-bold text-slate-800">{subject.nombre}</h3>
-            <p className="mt-1 text-[11px] text-slate-500">{subject.dias?.join(', ') || 'Días a confirmar'}{subject.horario ? ` · ${subject.horario}` : ''}</p>
-            <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-[10px] text-slate-500"><span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" />{roster} registros</span><span className="inline-flex items-center gap-1"><CalendarDaysIcon />{subject.fechas?.length || 0} clases</span><span className="font-bold text-emerald-700">{summary.porcentaje}%</span></div>
-          </button>)}
-        </div> : <EmptyState title="Todavía no hay materias cargadas" action="Abrir materias" onClick={() => onSelectView('materias')} />}
-      </section>
-
-      <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-[11px] leading-5 text-blue-900"><Check className="h-4 w-4 shrink-0 text-blue-600" /><span>Datos inventados para esta demo. Los indicadores usan únicamente las listas y fechas de ejemplo; no se conectan al padrón real.</span></div>
-    </div>
-  );
+const DonutChart: React.FC<{ values: number[]; colors: string[]; total: number }> = ({ values, colors, total }) => {
+  const r = 52;
+  const circumference = 2 * Math.PI * r;
+  let consumed = 0;
+  return <div className="ref-donut-wrap">
+    <svg className="ref-donut" viewBox="0 0 140 140" role="img" aria-label={`Distribución de asistencia: ${total} registros`}>
+      <circle cx="70" cy="70" r={r} fill="none" stroke="rgba(154,171,199,.13)" strokeWidth="18" />
+      {values.map((value, i) => {
+        const length = total ? (value / total) * circumference : 0;
+        const offset = consumed;
+        consumed += length;
+        return value > 0 ? <circle key={i} cx="70" cy="70" r={r} fill="none" stroke={colors[i]} strokeWidth="18" strokeDasharray={`${length} ${circumference - length}`} strokeDashoffset={-offset} strokeLinecap="round" transform="rotate(-90 70 70)" /> : null;
+      })}
+      <text x="70" y="66" textAnchor="middle" className="ref-donut-total">{total}</text>
+      <text x="70" y="84" textAnchor="middle" className="ref-donut-label">registros</text>
+    </svg>
+  </div>;
 };
 
-const CalendarDaysIcon = () => <CalendarCheck className="h-3.5 w-3.5" />;
+const StatCard: React.FC<{ label: string; value: string | number; note: string; icon: LucideIcon; color: string }> = ({ label, value, note, icon: Icon, color }) => <article className="ref-stat-card">
+  <div className="ref-stat-main"><div><p className="ref-stat-label">{label}</p><p className="ref-stat-value">{value}</p><p className="ref-stat-note">{note}</p></div><span className={`ref-stat-icon ${color}`}><Icon size={18} /></span></div>
+</article>;
 
-const EmptyState: React.FC<{ title: string; action: string; onClick: () => void }> = ({ title, action, onClick }) => <div className="py-8 text-center"><GraduationCap className="mx-auto h-8 w-8 text-slate-300" /><p className="mt-2 text-sm font-semibold text-slate-600">{title}</p><button type="button" onClick={onClick} className="mt-3 inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white">{action}<ChevronRight className="h-3.5 w-3.5" /></button></div>;
+export const DemoOverview: React.FC<DemoOverviewProps> = ({ data, onSelectView, onSelectSubject }) => {
+  const allDates = data.materias.flatMap(subject => subject.fechas || []);
+  const latestDate = latestDateChronologically(allDates);
+  const dateLabel = formatDate(latestDate);
+  const todayCounts: Counts = { present: 0, absent: 0, justified: 0, unmarked: 0, late: 0 };
+  for (const subject of data.materias) {
+    const date = latestDateChronologically(subject.fechas || []);
+    if (!date) continue;
+    for (const student of subject.alumnos || []) {
+      if (!isAttendanceEligibleStudent(subject, student, data.trabajadores || [])) continue;
+      todayCounts[statusFor(student, date)] += 1;
+    }
+  }
+  const totalToday = Object.values(todayCounts).reduce((a, b) => a + b, 0);
+  const totalStudents = data.alumnos.length;
+  const average = data.materias.length ? Math.round(data.materias.reduce((n, s) => n + summarizeAttendance(s, data.trabajadores || []).porcentaje, 0) / data.materias.length) : 0;
+  const subjects = data.materias.map((subject, index) => {
+    const summary = summarizeAttendance(subject, data.trabajadores || []);
+    return { subject, summary, index, latest: latestDateChronologically(subject.fechas || []) };
+  });
+  const maxRoster = Math.max(1, ...subjects.map(item => item.subject.alumnos.length));
+  const actions = [
+    { title: 'Registrar asistencia', description: 'Abrir una lista de materia', icon: CalendarCheck, view: 'asistencia' as ViewMode, subject: data.materias[0]?.id, tone: 'cyan' },
+    { title: 'Ver matrícula', description: 'Buscar y revisar alumnos', icon: Users, view: 'matricula' as ViewMode, tone: 'purple' },
+    { title: 'Gestionar materias', description: 'Cursos, horarios y nóminas', icon: BookOpen, view: 'materias' as ViewMode, tone: 'green' },
+    { title: 'Personal CPU', description: 'Consultar trabajadores', icon: BriefcaseBusiness, view: 'trabajadores' as ViewMode, tone: 'yellow' }
+  ];
+  const activity = [
+    ...subjects.slice(0, 3).map(({ subject, summary, latest }) => ({
+      module: 'Asistencia', title: `Lista · ${subject.nombre}`, detail: `${summary.presentes} presentes de ${summary.posibles} registros posibles`, when: `Última clase · ${formatDate(latest)}`, subjectId: subject.id, tone: 'cyan'
+    })),
+    { module: 'Matrícula', title: 'Padrón institucional', detail: `${totalStudents} alumnos de ejemplo · ${data.trabajadores.length} trabajadores`, when: 'Datos ficticios para explorar la interfaz', subjectId: '', tone: 'purple' }
+  ];
+  const distributionColors = ['#22d3ee', '#a855f7', '#4ade80', '#facc15', '#fb7185'];
+  const allStatus = [todayCounts.present, todayCounts.absent, todayCounts.late, todayCounts.justified + todayCounts.unmarked];
+  const statCards = [
+    { label: 'Alumnos en padrón', value: totalStudents, note: 'Matrícula institucional', icon: Users, color: 'cyan' },
+    { label: 'Trabajadores CPU', value: data.trabajadores.length, note: 'Personal institucional', icon: BriefcaseBusiness, color: 'purple' },
+    { label: 'Presentes · última clase', value: todayCounts.present, note: `${percent(todayCounts.present, totalToday)}% de ${totalToday} registros · ${dateLabel}`, icon: UserRoundCheck, color: 'green' },
+    { label: 'Ausencias · última clase', value: todayCounts.absent, note: `${todayCounts.justified} justificadas · ${todayCounts.unmarked} sin marcar`, icon: UserRoundX, color: 'red' },
+    { label: 'Materias y talleres', value: data.materias.length, note: 'Nóminas por materia', icon: BookOpen, color: 'blue' },
+    { label: 'Clases registradas', value: allDates.length, note: 'Fechas cargadas en las materias', icon: CalendarDays, color: 'yellow' },
+    { label: 'Asistencia promedio', value: `${average}%`, note: 'Cálculo por materia', icon: Activity, color: 'green' },
+    { label: 'Registros del período', value: subjects.reduce((sum, x) => sum + x.summary.marcados, 0), note: 'Presentes, ausentes y justificados', icon: CheckCircle2, color: 'purple' }
+  ];
+
+  return <div className="ref-dashboard">
+    <section className="ref-stats-grid" aria-label="Indicadores institucionales">{statCards.map(card => <StatCard key={card.label} {...card} />)}</section>
+
+    <section className="ref-dashboard-layout">
+      <div className="ref-dashboard-left">
+        <div className="ref-charts-grid">
+          <article className="ref-chart-card">
+            <div className="ref-card-heading"><div><h2>Asistencia · última clase</h2><p>Presentes, ausentes, tardanzas y otros registros.</p></div><span className="ref-badge">{dateLabel}</span></div>
+            <div className="ref-attendance-chart"><DonutChart values={allStatus} colors={['#4ade80', '#fb7185', '#facc15', '#94a3b8']} total={totalToday} />
+              <div className="ref-legend">{[
+                ['Presentes', todayCounts.present, '#4ade80'], ['Ausentes', todayCounts.absent, '#fb7185'], ['Tarde', todayCounts.late, '#facc15'], ['Justificados / sin marcar', todayCounts.justified + todayCounts.unmarked, '#94a3b8']
+              ].map(([label, value, color]) => <div className="ref-legend-item" key={String(label)}><span className="ref-legend-dot" style={{ backgroundColor: String(color) }} /><span>{label}</span><strong>{value}</strong></div>)}</div>
+            </div>
+          </article>
+
+          <article className="ref-chart-card">
+            <div className="ref-card-heading"><div><h2>Alumnos por materia</h2><p>Distribución de los registros en las nóminas.</p></div><span className="ref-badge">{subjects.length} listas</span></div>
+            <div className="ref-bar-chart">
+              {subjects.length ? subjects.map(({ subject }, i) => <button key={subject.id} type="button" className="ref-bar-row" onClick={() => { onSelectSubject(subject.id); onSelectView('asistencia'); }}>
+                <span className="ref-bar-label">{subject.nombre}</span><span className="ref-bar-track"><span className="ref-bar-fill" style={{ width: `${Math.max(6, subject.alumnos.length / maxRoster * 100)}%`, background: distributionColors[i % distributionColors.length] }} /></span><strong>{subject.alumnos.length}</strong>
+              </button>) : <div className="ref-empty-chart">No hay listas para mostrar todavía.</div>}
+              <div className="ref-chart-footnote"><span className="ref-chart-footnote-dot" /> Alumnos cargados en cada materia</div>
+            </div>
+          </article>
+        </div>
+
+        <article className="ref-panel ref-activity-panel">
+          <div className="ref-card-heading"><div><h2>Actividad reciente</h2><p>Últimos movimientos de las listas de asistencia.</p></div><span className="ref-icon-chip"><Activity size={16} /></span></div>
+          <div className="ref-activity-list">{activity.map((item, i) => <button type="button" key={`${item.title}-${i}`} className="ref-activity-item" onClick={() => item.subjectId ? (onSelectSubject(item.subjectId), onSelectView('asistencia')) : onSelectView('matricula')}>
+            <span className={`ref-activity-mark ${item.tone}`}><span /></span><span className="ref-activity-copy"><span className="ref-activity-title">{item.module} <span>·</span> {item.title}</span><span className="ref-activity-detail">{item.detail}</span><span className="ref-activity-time"><Clock3 size={12} /> {item.when}</span></span><ChevronRight size={16} className="ref-activity-chevron" />
+          </button>)}</div>
+        </article>
+
+        <article className="ref-panel ref-subjects-panel">
+          <div className="ref-card-heading"><div><h2>Materias y talleres</h2><p>Acceso directo a las nóminas y al registro de clases.</p></div><button type="button" className="ref-text-action" onClick={() => onSelectView('materias')}>Ver materias <ArrowUpRight size={14} /></button></div>
+          <div className="ref-subject-grid">{subjects.map(({ subject, summary, latest, index }) => <button type="button" key={subject.id} className="ref-subject-card" onClick={() => { onSelectSubject(subject.id); onSelectView('asistencia'); }}>
+            <span className="ref-subject-card-top"><span className="ref-subject-card-icon" style={{ color: distributionColors[index % distributionColors.length] }}><BookOpen size={17} /></span><span className="ref-subject-percentage">{summary.porcentaje}%</span></span>
+            <strong>{subject.nombre}</strong><span className="ref-subject-meta">{subject.dias?.join(', ') || 'Día no especificado'}{subject.horario ? ` · ${subject.horario}` : ''}</span>
+            <span className="ref-subject-meter"><span style={{ width: `${summary.porcentaje}%`, background: distributionColors[index % distributionColors.length] }} /></span>
+            <span className="ref-subject-bottom"><span><Users size={12} /> {subject.alumnos.length} registros</span><span><CalendarCheck size={12} /> {subject.fechas.length} clases</span><span>Últ. {formatDate(latest)}</span></span>
+          </button>)}</div>
+        </article>
+      </div>
+
+      <aside className="ref-quick-panel">
+        <div className="ref-card-heading"><div><h2>Accesos rápidos</h2><p>Ir directo a tareas frecuentes.</p></div></div>
+        <div className="ref-quick-actions">{actions.map(({ title, description, icon: Icon, view, subject, tone }) => <button type="button" key={title} className="ref-action-card" onClick={() => { if (subject && view === 'asistencia') onSelectSubject(subject); onSelectView(view); }}>
+          <span className={`ref-action-icon ${tone}`}><Icon size={18} /></span><span className="ref-action-copy"><strong>{title}</strong><small>{description}</small></span><ChevronRight size={16} className="ref-action-chevron" />
+        </button>)}</div>
+        <div className="ref-quick-divider" />
+        <div className="ref-quick-summary"><span className="ref-summary-icon"><GraduationCap size={17} /></span><span><strong>Resumen del padrón</strong><small>{totalStudents} alumnos · {data.materias.length} listas</small></span></div>
+        <button type="button" className="ref-outline-action" onClick={() => onSelectView('matricula')}><Plus size={15} /> Abrir matrícula completa</button>
+        <div className="ref-quick-footnote"><ShieldCheck size={14} /><span>Demo aislada<br />No se conecta a datos reales</span></div>
+      </aside>
+    </section>
+    <p className="ref-demo-footnote"><CheckCircle2 size={14} /> La asistencia se resume desde las listas ficticias de cada materia; ningún cambio se guarda en el sistema real.</p>
+  </div>;
+};
